@@ -13,14 +13,9 @@ const {
 
 const app = express();
 
-// 1. CORS en premier — Appliqué de manière globale pour TOUTES les méthodes (y compris OPTIONS)
 app.use(cors(corsOptions));
 
-// 2. Réponse immédiate aux requêtes Preflight OPTIONS (évite de descendre dans les routeurs)
-app.options('*', (req, res) => {
-  // On s'assure que les headers CORS configurés sont renvoyés et on stoppe la requête ici
-  res.sendStatus(204);
-});
+app.options('*', cors(corsOptions));
 
 // Parsing
 app.use(express.json({ limit: '1mb' }));

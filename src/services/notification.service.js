@@ -1,6 +1,36 @@
 const { pool }   = require('../config/database');
 const sseService = require('./sse.service');
 
+const pendingVerifications = new Map(); // email → Response[]
+
+async function subscribeVerification(email, res) {
+  if (!pendingVerifications.has(email)) pendingVerifications.set(email, []);
+  pendingVerifications.get(email).push(res);
+  console.log(`[SSE-VERIF] Abonnement — ${email}`);
+}
+
+async function unsubscribeVerification(email, res) {
+  const clients = pendingVerifications.get(email);
+  if (!clients) return;
+  const filtered = clients.filter((r) => r !== res);
+  if (filtered.length > 0) pendingVerifications.set(email, filtered);
+  else                     pendingVerifications.delete(email);
+}
+
+function notifyEmailVerifie(email) {
+  const clients = pendingVerifications.get(email) || [];
+  for (const res of clients) {
+    res.write(`event: email_verified\ndata: ${JSON.stringify({
+      type: 'email_verified',
+      isVerified: true,
+      message: 'Compte vérifié'
+    })}\n\n`);
+  }
+  pendingVerifications.delete(email);
+  console.log(`[SSE-VERIF] Notifié — ${email} (${clients.length} client(s))`);
+}
+
+
 async function createAlerte({ type_alerte, id_article, id_rapport, id_destinataire }) {
   const { rows } = await pool.query(
     `INSERT INTO alerte (type_alerte, id_article, id_rapport, id_destinataire, statut_envoi)
@@ -103,4 +133,7 @@ module.exports = {
   marquerEnvoyee,
   getAlertesByUser,
   countNonLues,
+  subscribeVerification,
+  unsubscribeVerification,
+  notifyEmailVerifie,
 };

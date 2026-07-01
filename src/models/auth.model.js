@@ -18,14 +18,43 @@ async function findUserById(idUser) {
   return rows[0] ?? null;
 }
 
-async function createUser({ email, mot_de_passe, role }) {
+async function createUser({ email, mot_de_passe, role, token_verification, token_expiration }) {
   const { rows } = await pool.query(
-    `INSERT INTO utilisateur (email, mot_de_passe, role)
-     VALUES ($1, $2, $3)
-     RETURNING id_user, email, role, created_at`,
-    [email, mot_de_passe, role]
+      `INSERT INTO utilisateur
+       (email, mot_de_passe, role, token_verification, token_expiration, email_verifie)
+       VALUES ($1, $2, $3, $4, $5, FALSE)
+         RETURNING id_user, email, role, created_at`,
+      [email, mot_de_passe, role, token_verification, token_expiration]
   );
   return rows[0];
+}
+
+async function findByTokenVerification(token) {
+  const { rows } = await pool.query(
+      `SELECT id_user, email, token_expiration, email_verifie
+     FROM utilisateur
+     WHERE token_verification = $1`,
+      [token]
+  );
+  return rows[0] ?? null;
+}
+
+async function activerCompte(idUser) {
+  await pool.query(
+      `UPDATE utilisateur
+     SET email_verifie = TRUE, token_verification = NULL, token_expiration = NULL
+     WHERE id_user = $1`,
+      [idUser]
+  );
+}
+
+async function regenererTokenVerification(idUser, token, expiration) {
+  await pool.query(
+      `UPDATE utilisateur
+     SET token_verification = $1, token_expiration = $2
+     WHERE id_user = $3`,
+      [token, expiration, idUser]
+  );
 }
 
 async function updatePassword(idUser, newHash) {
@@ -75,4 +104,7 @@ module.exports = {
   findRefreshToken,
   revokeRefreshToken,
   revokeAllUserTokens,
+  findByTokenVerification,
+  activerCompte,
+  regenererTokenVerification,
 };

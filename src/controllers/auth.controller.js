@@ -124,4 +124,25 @@ async function changePassword(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { signup, login, refresh, logout, logoutAll, getProfile, changePassword };
+async function verifyEmail(req, res, next) {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ success: false, error: 'Token manquant.' });
+
+    const result = await authService.verifierEmail(token);
+    return res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+}
+
+async function resendVerification(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email requis.' });
+
+    const result = await authService.renvoyerVerification(email);
+    return res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+}
+
+module.exports = { signup, login, refresh, logout, logoutAll, getProfile, changePassword, verifyEmail,
+  resendVerification };
