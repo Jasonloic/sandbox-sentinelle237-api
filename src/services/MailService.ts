@@ -56,7 +56,7 @@ export class MailService {
                           <td style="padding: 44px 40px 40px 40px;">
         
                             <h1 style="margin:0 0 20px 0;font-size:46px;font-weight:800;line-height:1.08;color:#0F0F0F;letter-spacing:-1.5px;">
-                              Vérifiez votre adresse email.
+                              ${pseudo}, Vérifiez votre adresse email.
                             </h1>
         
                             <hr style="border:none;border-top:1px solid #E5E7EB;margin:0 0 24px 0;">
