@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  veilleur
+  admin
+}
+
+enum Offre {
+  community
+  entreprise
+}
+
+model User {
+  id_user            String    @id @default(uuid())
+  pseudo             String    @unique
+  mail               String    @unique
+  password           String
+  role               Role      @default(veilleur)
+  pays               String
+  ville              String
+  verified           Boolean   @default(false)
+  activated          Boolean   @default(true)
+  token_verification String?
+  token_expiration   DateTime?
+  totp_secret        String?
+  totp_enabled       Boolean   @default(false)
+  offre              Offre     @default(community)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("users")
+}
