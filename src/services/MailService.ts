@@ -25,7 +25,7 @@ export class MailService {
             to,
             subject: `${APP_NAME} - Vérification de votre email`,
             html: `
-                <!DOCTYPE html>
+        <!DOCTYPE html>
         <html lang="fr">
         <head>
           <meta charset="utf-8">
@@ -33,11 +33,11 @@ export class MailService {
           <title>Vérifiez votre adresse email</title>
         </head>
         <body style="margin:0;padding:40px 0;background-color:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-        
+
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td align="center">
-        
+
                 <table width="560" cellpadding="0" cellspacing="0" border="0"
                   style="background-color:#6C6FF5;border-radius:20px;overflow:hidden;">
                   <tr>
@@ -47,26 +47,26 @@ export class MailService {
                       </p>
                     </td>
                   </tr>
-        
+
                   <tr>
                     <td style="padding: 0 12px;">
                       <table width="100%" cellpadding="0" cellspacing="0" border="0"
                         style="background:#FFFFFF;border-radius:14px;overflow:hidden;">
                         <tr>
                           <td style="padding: 44px 40px 40px 40px;">
-        
+
                             <h1 style="margin:0 0 20px 0;font-size:46px;font-weight:800;line-height:1.08;color:#0F0F0F;letter-spacing:-1.5px;">
-                              ${pseudo}, Vérifiez votre adresse email.
+                              Vérifiez votre adresse email.
                             </h1>
-        
+
                             <hr style="border:none;border-top:1px solid #E5E7EB;margin:0 0 24px 0;">
-        
+
                             <p style="margin:0 0 28px 0;font-size:15px;line-height:1.65;color:#6B7280;">
                               Bienvenue sur Sentinelle&nbsp;237&nbsp;! Cliquez sur le bouton
                               ci-dessous pour vérifier votre adresse email et activer votre
-                              compte. Ce lien expire dans <strong style="color:#374151;">24h</strong>.
+                              compte. Ce lien expire dans <strong style="color:#374151;">15&nbsp;minutes</strong>.
                             </p>
-        
+
                             <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
                               <tr>
                                 <td style="border-radius:100px;background:#6C6FF5;">
@@ -77,14 +77,14 @@ export class MailService {
                                 </td>
                               </tr>
                             </table>
-        
+
                             <p style="margin:0 0 6px 0;font-size:13.5px;color:#9CA3AF;">
                               Si le bouton ne fonctionne pas, collez ce lien dans votre navigateur&nbsp;:
                             </p>
                             <p style="margin:0 0 28px 0;font-size:12.5px;word-break:break-all;">
                               <a href="${link}" style="color:#6C6FF5;text-decoration:underline;">${link}</a>
                             </p>
-        
+
                             <p style="margin:0;font-size:13.5px;line-height:1.65;color:#6B7280;">
                               Si vous n'avez pas créé de compte sur Sentinelle&nbsp;237 ou si vous
                               pensez qu'il y a une erreur, contactez-nous à
@@ -94,13 +94,13 @@ export class MailService {
                               </a>.
                               Nous sommes là pour vous aider&nbsp;!
                             </p>
-        
+
                           </td>
                         </tr>
                       </table>
                     </td>
                   </tr>
-        
+
                   <tr>
                     <td style="padding: 10px 12px 12px 12px;">
                       <table width="100%" cellpadding="0" cellspacing="0" border="0"
@@ -124,7 +124,7 @@ export class MailService {
                       </table>
                     </td>
                   </tr>
-        
+
                   <tr>
                     <td align="center" style="padding: 18px 32px 24px 32px;">
                       <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.65);">
@@ -132,13 +132,13 @@ export class MailService {
                       </p>
                     </td>
                   </tr>
-        
+
                 </table>
-        
+
               </td>
             </tr>
           </table>
-        
+
         </body>
         </html>
       `,
