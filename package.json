@@ -40,6 +40,7 @@
   },
   "scripts": {
     "dev": "nodemon --exec ts-node src/app.ts",
+    "postinstall": "prisma generate",
     "build": "tsc",
     "start": "node dist/app.js",
     "seed": "prisma db seed"
