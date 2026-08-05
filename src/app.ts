@@ -5,6 +5,8 @@ import { connectToDB } from "./config/db";
 import { AppRoutes } from "./routes/AppRoutes";
 import ErrorHandler from "./middlewares/ErrorHandler";
 import { HttpException } from "./utils/HttpExceptions";
+import { startFluxRefreshJob } from "./jobs/FluxRefreshJob";
+import { startAlerteJobs } from "./jobs/AlerteJob";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -15,21 +17,26 @@ app.use(cookieParser());
 app.use("/api", AppRoutes);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
-    next(new HttpException(404, "Route not found"));
+  next(new HttpException(404, "Route not found"));
 });
 
 app.use(ErrorHandler);
 
-const initializeApp = async () => {
-    try {
-        app.listen(3000, () => {
-            console.log(`[server]: server is running at http://localhost:3000/api`);
-        });
-        await connectToDB();
-    } catch (err) {
-        console.error(err);
-        process.exit(1);
-    }
-};
+export { app };
 
-initializeApp();
+if (require.main === module) {
+  const initializeApp = async () => {
+    try {
+      app.listen(3000, () => {
+        console.log(`[server]: server is running at http://localhost:3000/api`);
+      });
+      await connectToDB();
+      startFluxRefreshJob();
+      startAlerteJobs();
+    } catch (err) {
+      console.error(err);
+      process.exit(1);
+    }
+  };
+  initializeApp();
+}

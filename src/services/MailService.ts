@@ -144,4 +144,42 @@ export class MailService {
       `,
         });
     }
+
+    async sendAlerteDigest(to: string, motCle: string, items: { titre: string; lien: string }[]) {
+  const listHtml = items
+    .map(
+      (item) =>
+        `<li style="margin-bottom:12px;"><a href="${item.lien}" style="color:#6C6FF5;text-decoration:none;font-weight:600;">${item.titre}</a></li>`
+    )
+    .join("");
+
+  const html = `<!DOCTYPE html>
+    <html lang="fr">
+    <head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:32px 0;background-color:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+          <table width="560" cellpadding="0" cellspacing="0" border="0" style="background:#FFFFFF;border-radius:14px;overflow:hidden;">
+            <tr><td style="padding:28px 32px 8px 32px;">
+              <p style="margin:0;font-size:15px;font-weight:700;color:#6C6FF5;">✦ Sentinelle 237 — Alerte</p>
+            </td></tr>
+            <tr><td style="padding:8px 32px 32px 32px;">
+              <h2 style="margin:0 0 16px 0;font-size:22px;color:#0F0F0F;">Nouveaux résultats pour "${motCle}"</h2>
+              <ul style="margin:0;padding-left:18px;font-size:14px;color:#374151;">
+                ${listHtml}
+              </ul>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>`;
+
+  await this.transporter.sendMail({
+    from: MAIL_FROM,
+    to,
+    subject: `Sentinelle 237 - Nouveaux résultats pour "${motCle}"`,
+    html,
+  });
+}
 }

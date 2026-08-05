@@ -1,0 +1,348 @@
+import { FluxType, type Prisma } from "@prisma/client";
+import FluxRepository from "../repositories/FluxRepository";
+import ArticleRepository from "../repositories/ArticleRepository";
+import UserFluxRepository from "../repositories/UserFluxRepository";
+import { FeedParserService, type ParsedFeed } from "./FeedParserService";
+import { TelegramService } from "./TelegramService";
+import { HttpException } from "../utils/HttpExceptions";
+import { extractText, safeDate } from "../utils/sanitize";
+import type {
+  CreateFluxInput,
+  ListArticlesQuery,
+  ListFluxQuery,
+  ListSuggestionsQuery,
+  ListMyFluxQuery,
+} from "../validations/FluxValidations";
+
+const { NITTER_INSTANCE, FLUX_REFRESH_COOLDOWN_MINUTES } = process.env as { [key: string]: string };
+
+const fluxRepository = new FluxRepository();
+const articleRepository = new ArticleRepository();
+const userFluxRepository = new UserFluxRepository();
+const feedParserService = new FeedParserService();
+const telegramService = new TelegramService();
+
+type CrawlData = {
+  lien_rss: string;
+  nom?: string;
+  url_site?: string | null;
+  logo?: string | null;
+  items: ParsedFeed["items"];
+};
+
+export default class FluxService {
+  private readonly fluxRepository: FluxRepository;
+  private readonly articleRepository: ArticleRepository;
+  private readonly userFluxRepository: UserFluxRepository;
+  private readonly feedParserService: FeedParserService;
+  private readonly telegramService: TelegramService;
+
+  constructor() {
+    this.fluxRepository = fluxRepository;
+    this.articleRepository = articleRepository;
+    this.userFluxRepository = userFluxRepository;
+    this.feedParserService = feedParserService;
+    this.telegramService = telegramService;
+  }
+
+  private normalizeUrl(input: string): string {
+    return /^https?:\/\//i.test(input) ? input : `https://${input}`;
+  }
+
+  private mapTelegramPosts(posts: Awaited<ReturnType<TelegramService["fetchChannelPosts"]>>["posts"]) {
+    return posts.map((p) => ({
+      title: p.text ? p.text.slice(0, 80) : "Publication Telegram",
+      link: p.link,
+      contentSnippet: p.text,
+      isoDate: p.date,
+      enclosure: p.image ? { url: p.image } : undefined,
+    }));
+  }
+
+  private async crawlByType(input: CreateFluxInput): Promise<CrawlData> {
+    switch (input.type) {
+      case FluxType.rss: {
+        const feedUrl = await this.feedParserService.discoverFeedUrl(this.normalizeUrl(input.identifiant));
+        const parsed = await this.feedParserService.parseFeed(feedUrl);
+        return {
+          lien_rss: feedUrl,
+          nom: parsed.title,
+          url_site: parsed.link ?? null,
+          logo: parsed.image?.url ?? null,
+          items: parsed.items,
+        };
+      }
+
+      case FluxType.youtube: {
+        const feedUrl = await this.feedParserService.resolveYoutubeFeedUrl(this.normalizeUrl(input.identifiant));
+        const parsed = await this.feedParserService.parseFeed(feedUrl);
+        return {
+          lien_rss: feedUrl,
+          nom: parsed.title,
+          url_site: parsed.link ?? null,
+          logo: parsed.image?.url ?? null,
+          items: parsed.items,
+        };
+      }
+
+      case FluxType.x: {
+        const username = input.identifiant.replace(/^@/, "").replace(/\/$/, "");
+        const feedUrl = `${NITTER_INSTANCE}/${username}/rss`;
+        const parsed = await this.feedParserService.parseFeed(feedUrl);
+        return {
+          lien_rss: feedUrl,
+          nom: parsed.title,
+          url_site: parsed.link ?? null,
+          logo: parsed.image?.url ?? null,
+          items: parsed.items,
+        };
+      }
+
+      case FluxType.telegram: {
+        const result = await this.telegramService.fetchChannelPosts(input.identifiant);
+        return {
+          lien_rss: `telegram://${result.channelLink.replace("https://t.me/", "")}`,
+          nom: result.channelName,
+          url_site: result.channelLink,
+          logo: null,
+          items: this.mapTelegramPosts(result.posts),
+        };
+      }
+
+      default:
+        throw new HttpException(400, "Type de flux non supporté");
+    }
+  }
+
+  private async saveArticles(flux_id: string, items: ParsedFeed["items"]) {
+    const data: Prisma.ArticleCreateManyInput[] = items
+      .filter((item) => !!item.link)
+      .map((item) => ({
+        flux_id,
+        titre: extractText(item.title as unknown) ?? "Sans titre",
+        lien: item.link as string,
+        description: extractText(item.contentSnippet as unknown) ?? extractText(item.content as unknown) ?? null,
+        image: item.enclosure?.url ?? null,
+        auteur: extractText(item.creator as unknown) ?? null,
+        date_publication: safeDate(item.isoDate) ?? safeDate(item.pubDate),
+      }));
+
+    if (data.length > 0) {
+      await this.articleRepository.createMany(data);
+    }
+  }
+
+  
+  private async crawlExistingFlux(flux: { type: FluxType; lien_rss: string }): Promise<ParsedFeed["items"]> {
+    if (flux.type === FluxType.telegram) {
+      const username = flux.lien_rss.replace("telegram://", "");
+      const result = await this.telegramService.fetchChannelPosts(username);
+      return this.mapTelegramPosts(result.posts);
+    }
+    const parsed = await this.feedParserService.parseFeed(flux.lien_rss);
+    return parsed.items;
+  }
+
+  async create(input: CreateFluxInput, userId: string) {
+    const crawlData = await this.crawlByType(input);
+    const existing = await this.fluxRepository.getByLienRss(crawlData.lien_rss);
+
+    if (existing) {
+      const alreadySubscribed = await this.userFluxRepository.exists(userId, existing.id_flux);
+      if (alreadySubscribed) throw new HttpException(409, "Vous suivez déjà ce flux");
+
+      // Flux déjà connu ailleurs dans la base : abonnement uniquement, AUCUN nouveau crawl
+      await this.userFluxRepository.subscribe(userId, existing.id_flux);
+      const { articles, total } = await this.articleRepository.getByFluxId(existing.id_flux);
+      return { flux: existing, articles, total, alreadyExisted: true };
+    }
+
+    // Nouveau flux : premier crawl, articles disponibles immédiatement
+    const flux = await this.fluxRepository.create({
+      nom: input.nom || crawlData.nom || input.identifiant,
+      url_site: crawlData.url_site ?? null,
+      lien_rss: crawlData.lien_rss,
+      logo: crawlData.logo ?? null,
+      type: input.type,
+      last_crawled_at: new Date(),
+      createdByUser: { connect: { id_user: userId } },
+    });
+
+    await this.saveArticles(flux.id_flux, crawlData.items);
+    await this.userFluxRepository.subscribe(userId, flux.id_flux);
+
+    const { articles, total } = await this.articleRepository.getByFluxId(flux.id_flux);
+    return { flux, articles, total, alreadyExisted: false };
+  }
+
+  // Strictement les flux suivis par CET utilisateur, filtrables par zone/type
+  async getMyFlux(userId: string, query: ListMyFluxQuery) {
+    const skip = (query.page - 1) * query.limit;
+    const fluxWhere: Prisma.FluxWhereInput = {};
+    if (query.zone) fluxWhere.zone = query.zone;
+    if (query.type) fluxWhere.type = query.type;
+
+    const { flux, total } = await this.userFluxRepository.getUserFlux({
+      user_id: userId,
+      skip,
+      take: query.limit,
+      fluxWhere,
+    });
+
+    return {
+      flux,
+      pagination: {
+        total,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.max(Math.ceil(total / query.limit), 1),
+      },
+    };
+  }
+
+  private async assertUserOwnsFlux(userId: string, id_flux: string) {
+    const subscribed = await this.userFluxRepository.exists(userId, id_flux);
+    if (!subscribed) throw new HttpException(404, "Flux introuvable");
+  }
+
+  async getById(userId: string, id_flux: string) {
+    await this.assertUserOwnsFlux(userId, id_flux);
+    const flux = await this.fluxRepository.getById(id_flux);
+    if (!flux) throw new HttpException(404, "Flux introuvable");
+    return flux;
+  }
+
+  async getArticles(userId: string, id_flux: string, query: ListArticlesQuery) {
+    await this.assertUserOwnsFlux(userId, id_flux);
+    const skip = (query.page - 1) * query.limit;
+    const { articles, total } = await this.articleRepository.getByFluxId(id_flux, { skip, take: query.limit });
+
+    return {
+      articles,
+      pagination: {
+        total,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.max(Math.ceil(total / query.limit), 1),
+      },
+    };
+  }
+
+  async refresh(userId: string, id_flux: string) {
+    await this.assertUserOwnsFlux(userId, id_flux);
+    const flux = await this.fluxRepository.getById(id_flux);
+    if (!flux) throw new HttpException(404, "Flux introuvable");
+
+    const cooldownMs = Number(FLUX_REFRESH_COOLDOWN_MINUTES) * 60 * 1000;
+    if (flux.last_crawled_at && Date.now() - flux.last_crawled_at.getTime() < cooldownMs) {
+      throw new HttpException(
+        429,
+        `Ce flux a déjà été actualisé récemment, réessayez dans ${FLUX_REFRESH_COOLDOWN_MINUTES} minutes`
+      );
+    }
+
+    const items = await this.crawlExistingFlux(flux);
+    await this.saveArticles(flux.id_flux, items);
+    await this.fluxRepository.update(flux.id_flux, { last_crawled_at: new Date() });
+
+    const { articles, total } = await this.articleRepository.getByFluxId(flux.id_flux);
+    return { articles, total };
+  }
+
+  // Utilisé par le job cron : balaie tous les flux dont le cooldown est expiré, tous utilisateurs confondus
+  async refreshDueFlux() {
+    const cooldownMs = Number(FLUX_REFRESH_COOLDOWN_MINUTES) * 60 * 1000;
+    const cutoff = new Date(Date.now() - cooldownMs);
+    const dueFlux = await this.fluxRepository.getDueForRefresh(cutoff);
+
+    const result = {
+      total: dueFlux.length,
+      refreshed: 0,
+      failed: [] as { id_flux: string; nom: string; error: string }[],
+    };
+
+    for (const flux of dueFlux) {
+      try {
+        const items = await this.crawlExistingFlux(flux);
+        await this.saveArticles(flux.id_flux, items);
+        await this.fluxRepository.update(flux.id_flux, { last_crawled_at: new Date() });
+        result.refreshed++;
+      } catch (err) {
+        result.failed.push({
+          id_flux: flux.id_flux,
+          nom: flux.nom,
+          error: err instanceof Error ? err.message : "erreur inconnue",
+        });
+      }
+    }
+
+    return result;
+  }
+
+  // Se désabonner : ne supprime jamais le flux pour les autres utilisateurs qui le suivent encore,
+  // et ne supprime jamais un flux du catalogue de suggestions
+  async unsubscribe(userId: string, id_flux: string) {
+    await this.assertUserOwnsFlux(userId, id_flux);
+    const flux = await this.fluxRepository.getById(id_flux);
+    await this.userFluxRepository.unsubscribe(userId, id_flux);
+
+    if (flux && !flux.is_suggestion) {
+      const remaining = await this.userFluxRepository.countSubscribers(id_flux);
+      if (remaining === 0) {
+        await this.fluxRepository.delete(id_flux);
+      }
+    }
+  }
+
+  async getSuggestions(userId: string, query: ListSuggestionsQuery) {
+    const skip = (query.page - 1) * query.limit;
+    const where: Prisma.FluxWhereInput = {};
+    if (query.zone) where.zone = query.zone;
+
+    const [{ flux, total }, subscribedIds] = await Promise.all([
+      this.fluxRepository.getSuggestions({ skip, take: query.limit, where }),
+      this.userFluxRepository.getSubscribedFluxIds(userId),
+    ]);
+    const subscribedSet = new Set(subscribedIds);
+
+    return {
+      flux: flux.map((f) => ({ ...f, isSubscribed: subscribedSet.has(f.id_flux) })),
+      pagination: {
+        total,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.max(Math.ceil(total / query.limit), 1),
+      },
+    };
+  }
+
+  async quickSubscribe(userId: string, id_flux: string) {
+    const flux = await this.fluxRepository.getById(id_flux);
+    if (!flux) throw new HttpException(404, "Flux introuvable");
+
+    const alreadySubscribed = await this.userFluxRepository.exists(userId, id_flux);
+    if (alreadySubscribed) throw new HttpException(409, "Vous suivez déjà ce flux");
+
+    await this.userFluxRepository.subscribe(userId, id_flux);
+    const { articles, total } = await this.articleRepository.getByFluxId(id_flux);
+    return { flux, articles, total };
+  }
+
+  // Réservé admin : supervision globale du catalogue
+  async getAllForAdmin(query: ListFluxQuery) {
+    const skip = (query.page - 1) * query.limit;
+    const where: Prisma.FluxWhereInput = {};
+    if (query.type) where.type = query.type;
+
+    const { flux, total } = await this.fluxRepository.getAll({ skip, take: query.limit, where });
+    return {
+      flux,
+      pagination: {
+        total,
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.max(Math.ceil(total / query.limit), 1),
+      },
+    };
+  }
+}
