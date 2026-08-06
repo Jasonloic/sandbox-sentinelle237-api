@@ -10,6 +10,9 @@ export class MailService {
     private transporter;
 
     constructor() {
+        if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
+            throw new Error("[MailService]: configuration SMTP incomplète — vérifie SMTP_HOST/PORT/USER/PASS");
+        }
         this.transporter = nodemailer.createTransport({
             host: SMTP_HOST,
             port: Number(SMTP_PORT),
