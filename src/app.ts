@@ -27,8 +27,8 @@ export { app };
 if (require.main === module) {
   const initializeApp = async () => {
     try {
-      app.listen(3000, () => {
-        console.log(`[server]: server is running at http://localhost:3000/api`);
+      app.listen(process.env.PORT || 3000, () => {
+        console.log(`[server]: server is running on port ${process.env.PORT || 3000}`);
       });
       await connectToDB();
       startFluxRefreshJob();
