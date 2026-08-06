@@ -18,6 +18,9 @@ export class MailService {
             port: Number(SMTP_PORT),
             secure: Number(SMTP_PORT) === 465,
             auth: { user: SMTP_USER, pass: SMTP_PASS },
+            tls: {
+                servername: "mail.iecameroun.cm",
+            },
         });
     }
 
