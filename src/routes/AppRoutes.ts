@@ -6,6 +6,7 @@ import { FluxRoutes } from "./FluxRoutes";
 import { AlerteRoutes } from "./AlerteRoutes";
 import { DossierRoutes } from "./DossierRoutes";
 import { CategorieFluxRoutes } from "./CategorieFluxRoutes";
+import { DashboardRoutes } from "./DashboardRoutes";
 import Auth from "../middlewares/Auth";
 
 const router = Router();
@@ -18,5 +19,6 @@ router.use("/flux", authMiddleware.verifyToken, FluxRoutes);
 router.use("/categories-flux", authMiddleware.verifyToken, CategorieFluxRoutes);
 router.use("/alertes", authMiddleware.verifyToken, AlerteRoutes);
 router.use("/dossiers", authMiddleware.verifyToken, DossierRoutes);
+router.use("/dashboard", authMiddleware.verifyToken, DashboardRoutes);
 
 export { router as AppRoutes };

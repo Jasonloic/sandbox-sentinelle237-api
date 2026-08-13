@@ -8,6 +8,7 @@ import ErrorHandler from "./middlewares/ErrorHandler";
 import { HttpException } from "./utils/HttpExceptions";
 import { startFluxRefreshJob } from "./jobs/FluxRefreshJob";
 import { startAlerteJobs } from "./jobs/AlerteJob";
+import { startDashboardJobs } from "./jobs/DashboardJob";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -45,6 +46,7 @@ if (require.main === module) {
       await connectToDB();
       startFluxRefreshJob();
       startAlerteJobs();
+      startDashboardJobs();
     } catch (err) {
       console.error(err);
       process.exit(1);

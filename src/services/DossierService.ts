@@ -102,8 +102,6 @@ export default class DossierService {
         await this.dossierRepository.unlinkFlux(id_dossier, flux_id);
     }
 
-    // Timeline unifiée : fusionne résultats d'alertes + articles de flux liés au dossier,
-    // avec un signal "fort" si le même lien apparaît via plusieurs sources distinctes
     async getTimeline(userId: string, id_dossier: string, query: TimelineQuery) {
         const dossier = await this.assertOwnership(userId, id_dossier);
 
@@ -150,7 +148,6 @@ export default class DossierService {
             })),
         ];
 
-        // Corrélation multi-sources : un même lien référencé par plusieurs alertes/flux distincts = signal fort
         const sourcesParLien = new Map<string, Set<string>>();
         for (const item of combined) {
             const key = `${item.type}:${item.sourceId}`;
