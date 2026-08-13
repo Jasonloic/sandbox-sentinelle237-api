@@ -2,10 +2,11 @@ import { FluxType, type Prisma } from "@prisma/client";
 import FluxRepository from "../repositories/FluxRepository";
 import ArticleRepository from "../repositories/ArticleRepository";
 import UserFluxRepository from "../repositories/UserFluxRepository";
+import CategorieFluxRepository from "../repositories/CategorieFluxRepository";
 import { FeedParserService, type ParsedFeed } from "./FeedParserService";
 import { TelegramService } from "./TelegramService";
-import { HttpException } from "../utils/HttpExceptions";
 import { extractText, safeDate } from "../utils/sanitize";
+import { HttpException } from "../utils/HttpExceptions";
 import type {
   CreateFluxInput,
   ListArticlesQuery,
@@ -19,6 +20,7 @@ const { NITTER_INSTANCE, FLUX_REFRESH_COOLDOWN_MINUTES } = process.env as { [key
 const fluxRepository = new FluxRepository();
 const articleRepository = new ArticleRepository();
 const userFluxRepository = new UserFluxRepository();
+const categorieFluxRepository = new CategorieFluxRepository();
 const feedParserService = new FeedParserService();
 const telegramService = new TelegramService();
 
@@ -34,6 +36,7 @@ export default class FluxService {
   private readonly fluxRepository: FluxRepository;
   private readonly articleRepository: ArticleRepository;
   private readonly userFluxRepository: UserFluxRepository;
+  private readonly categorieFluxRepository: CategorieFluxRepository;
   private readonly feedParserService: FeedParserService;
   private readonly telegramService: TelegramService;
 
@@ -41,6 +44,7 @@ export default class FluxService {
     this.fluxRepository = fluxRepository;
     this.articleRepository = articleRepository;
     this.userFluxRepository = userFluxRepository;
+    this.categorieFluxRepository = categorieFluxRepository;
     this.feedParserService = feedParserService;
     this.telegramService = telegramService;
   }
@@ -116,23 +120,22 @@ export default class FluxService {
 
   private async saveArticles(flux_id: string, items: ParsedFeed["items"]) {
     const data: Prisma.ArticleCreateManyInput[] = items
-      .filter((item) => !!item.link)
-      .map((item) => ({
-        flux_id,
-        titre: extractText(item.title as unknown) ?? "Sans titre",
-        lien: item.link as string,
-        description: extractText(item.contentSnippet as unknown) ?? extractText(item.content as unknown) ?? null,
-        image: item.enclosure?.url ?? null,
-        auteur: extractText(item.creator as unknown) ?? null,
-        date_publication: safeDate(item.isoDate) ?? safeDate(item.pubDate),
-      }));
+        .filter((item) => !!item.link)
+        .map((item) => ({
+          flux_id,
+          titre: extractText(item.title as unknown) ?? "Sans titre",
+          lien: item.link as string,
+          description: extractText(item.contentSnippet as unknown) ?? extractText(item.content as unknown) ?? null,
+          image: item.enclosure?.url ?? null,
+          auteur: extractText(item.creator as unknown) ?? null,
+          date_publication: safeDate(item.isoDate) ?? safeDate(item.pubDate),
+        }));
 
     if (data.length > 0) {
       await this.articleRepository.createMany(data);
     }
   }
 
-  
   private async crawlExistingFlux(flux: { type: FluxType; lien_rss: string }): Promise<ParsedFeed["items"]> {
     if (flux.type === FluxType.telegram) {
       const username = flux.lien_rss.replace("telegram://", "");
@@ -143,27 +146,35 @@ export default class FluxService {
     return parsed.items;
   }
 
+  // Résout un code de catégorie en id, lève une 400 si le code n'existe pas
+  private async resolveCategorieId(code: string | undefined): Promise<string | null> {
+    if (!code) return null;
+    const categorie = await this.categorieFluxRepository.getByCode(code);
+    if (!categorie) throw new HttpException(400, `Catégorie "${code}" inconnue`);
+    return categorie.id_categorie;
+  }
+
   async create(input: CreateFluxInput, userId: string) {
     const crawlData = await this.crawlByType(input);
+    const categorieId = await this.resolveCategorieId(input.categorie);
     const existing = await this.fluxRepository.getByLienRss(crawlData.lien_rss);
 
     if (existing) {
       const alreadySubscribed = await this.userFluxRepository.exists(userId, existing.id_flux);
       if (alreadySubscribed) throw new HttpException(409, "Vous suivez déjà ce flux");
 
-      // Flux déjà connu ailleurs dans la base : abonnement uniquement, AUCUN nouveau crawl
       await this.userFluxRepository.subscribe(userId, existing.id_flux);
       const { articles, total } = await this.articleRepository.getByFluxId(existing.id_flux);
       return { flux: existing, articles, total, alreadyExisted: true };
     }
 
-    // Nouveau flux : premier crawl, articles disponibles immédiatement
     const flux = await this.fluxRepository.create({
       nom: input.nom || crawlData.nom || input.identifiant,
       url_site: crawlData.url_site ?? null,
       lien_rss: crawlData.lien_rss,
       logo: crawlData.logo ?? null,
       type: input.type,
+      categorie: categorieId ? { connect: { id_categorie: categorieId } } : undefined,
       last_crawled_at: new Date(),
       createdByUser: { connect: { id_user: userId } },
     });
@@ -175,12 +186,15 @@ export default class FluxService {
     return { flux, articles, total, alreadyExisted: false };
   }
 
-  // Strictement les flux suivis par CET utilisateur, filtrables par zone/type
   async getMyFlux(userId: string, query: ListMyFluxQuery) {
     const skip = (query.page - 1) * query.limit;
     const fluxWhere: Prisma.FluxWhereInput = {};
     if (query.zone) fluxWhere.zone = query.zone;
     if (query.type) fluxWhere.type = query.type;
+    if (query.categorie) {
+      const categorieId = await this.resolveCategorieId(query.categorie);
+      fluxWhere.categorie_id = categorieId ?? "__aucune__";
+    }
 
     const { flux, total } = await this.userFluxRepository.getUserFlux({
       user_id: userId,
@@ -236,8 +250,8 @@ export default class FluxService {
     const cooldownMs = Number(FLUX_REFRESH_COOLDOWN_MINUTES) * 60 * 1000;
     if (flux.last_crawled_at && Date.now() - flux.last_crawled_at.getTime() < cooldownMs) {
       throw new HttpException(
-        429,
-        `Ce flux a déjà été actualisé récemment, réessayez dans ${FLUX_REFRESH_COOLDOWN_MINUTES} minutes`
+          429,
+          `Ce flux a déjà été actualisé récemment, réessayez dans ${FLUX_REFRESH_COOLDOWN_MINUTES} minutes`
       );
     }
 
@@ -249,7 +263,6 @@ export default class FluxService {
     return { articles, total };
   }
 
-  // Utilisé par le job cron : balaie tous les flux dont le cooldown est expiré, tous utilisateurs confondus
   async refreshDueFlux() {
     const cooldownMs = Number(FLUX_REFRESH_COOLDOWN_MINUTES) * 60 * 1000;
     const cutoff = new Date(Date.now() - cooldownMs);
@@ -279,8 +292,6 @@ export default class FluxService {
     return result;
   }
 
-  // Se désabonner : ne supprime jamais le flux pour les autres utilisateurs qui le suivent encore,
-  // et ne supprime jamais un flux du catalogue de suggestions
   async unsubscribe(userId: string, id_flux: string) {
     await this.assertUserOwnsFlux(userId, id_flux);
     const flux = await this.fluxRepository.getById(id_flux);
@@ -298,6 +309,10 @@ export default class FluxService {
     const skip = (query.page - 1) * query.limit;
     const where: Prisma.FluxWhereInput = {};
     if (query.zone) where.zone = query.zone;
+    if (query.categorie) {
+      const categorieId = await this.resolveCategorieId(query.categorie);
+      where.categorie_id = categorieId ?? "__aucune__";
+    }
 
     const [{ flux, total }, subscribedIds] = await Promise.all([
       this.fluxRepository.getSuggestions({ skip, take: query.limit, where }),
@@ -328,11 +343,14 @@ export default class FluxService {
     return { flux, articles, total };
   }
 
-  // Réservé admin : supervision globale du catalogue
   async getAllForAdmin(query: ListFluxQuery) {
     const skip = (query.page - 1) * query.limit;
     const where: Prisma.FluxWhereInput = {};
     if (query.type) where.type = query.type;
+    if (query.categorie) {
+      const categorieId = await this.resolveCategorieId(query.categorie);
+      where.categorie_id = categorieId ?? "__aucune__";
+    }
 
     const { flux, total } = await this.fluxRepository.getAll({ skip, take: query.limit, where });
     return {
