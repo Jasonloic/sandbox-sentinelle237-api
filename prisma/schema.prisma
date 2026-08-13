@@ -276,7 +276,7 @@ model DossierFlux {
 
 model CoursMatierePremiere {
   id_cours      String   @id @default(uuid())
-  matiere       String   // "or" | "argent" | "platine" | "palladium" | "cuivre" | "petrole_brent" | "petrole_wti"
+  matiere       String
   prix          Float
   devise        String   @default("USD")
   variation_24h Float?
@@ -288,7 +288,7 @@ model CoursMatierePremiere {
 
 model CoursDevise {
   id_cours      String   @id @default(uuid())
-  paire         String   // ex: "EUR/USD", "EUR/XAF"
+  paire         String
   taux          Float
   variation_24h Float?
   recorded_at   DateTime @default(now())
