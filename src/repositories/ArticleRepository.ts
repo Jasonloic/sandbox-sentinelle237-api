@@ -38,6 +38,21 @@ export default class ArticleRepository {
       take: 50,
     });
   }
+  async searchByKeywordsInFlux(flux_ids: string[], keywords: string[]) {
+    if (flux_ids.length === 0 || keywords.length === 0) return [];
+
+    return await this.db.article.findMany({
+      where: {
+        flux_id: { in: flux_ids },
+        OR: keywords.flatMap((kw) => [
+          { titre: { contains: kw, mode: "insensitive" as const } },
+          { description: { contains: kw, mode: "insensitive" as const } },
+        ]),
+      },
+      orderBy: { date_publication: "desc" },
+      take: 30,
+    });
+  }
 
   // Récupère un article précis, utilisé par le module Favoris/Annotations et Dossiers/timeline
   async getById(id_article: string) {
