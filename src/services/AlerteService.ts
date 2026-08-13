@@ -22,7 +22,6 @@ const apiQuotaRepository = new ApiQuotaRepository();
 const currentsApiService = new CurrentsApiService();
 const mailService = new MailService();
 
-// AlerteLangue partage les mêmes codes ISO 639-1 que Currents API, sauf "toutes" (aucun filtre)
 function langueToApiParam(langue: AlerteLangue): string | undefined {
   return langue === AlerteLangue.toutes ? undefined : langue;
 }
@@ -65,7 +64,6 @@ export default class AlerteService {
       user: { connect: { id_user: userId } },
     });
 
-    // Recherche interne immédiate (gratuite), avec envoi immédiat si frequence === immediat
     await this.matchInternalArticles(alerte);
 
     return alerte;
@@ -122,7 +120,6 @@ export default class AlerteService {
     return await this.alerteResultatRepository.markAsRead(id_resultat);
   }
 
-  // ── Logique interne, utilisée aussi par les jobs planifiés ──
 
   async matchInternalArticles(alerte: {
     id_alerte: string;
@@ -188,7 +185,6 @@ export default class AlerteService {
     }
   }
 
-  // Envoie par email les résultats non encore envoyés, respecte "meilleurs" vs "tous"
   async dispatchDigest(alerte: {
     id_alerte: string;
     mot_cle: string;
@@ -211,7 +207,7 @@ export default class AlerteService {
     await this.alerteRepository.update(alerte.id_alerte, { dernier_envoi: new Date() });
   }
 
-  // ── Jobs planifiés ──
+
 
   async runInternalMatchForAllActive() {
     const alertes = await this.alerteRepository.getAllActive();
@@ -228,7 +224,8 @@ export default class AlerteService {
   }
 
   async runWebSearchBatch() {
-    const used = await this.apiQuotaRepository.getTodayCount(CURRENTS_QUOTA_KEY);
+    const period = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const used = await this.apiQuotaRepository.getCount(CURRENTS_QUOTA_KEY, period);
     const remaining = Number(CURRENTS_API_DAILY_QUOTA) - used;
 
     if (remaining <= 0) {
@@ -242,7 +239,7 @@ export default class AlerteService {
     for (const alerte of dueAlertes) {
       try {
         await this.matchWebResults(alerte);
-        await this.apiQuotaRepository.increment(CURRENTS_QUOTA_KEY, 1);
+        await this.apiQuotaRepository.increment(CURRENTS_QUOTA_KEY, period, 1); // period ajouté ici
         searched++;
       } catch (err) {
         console.error(`[alerte-web-search]: échec pour "${alerte.mot_cle}":`, err);
@@ -251,7 +248,6 @@ export default class AlerteService {
 
     return { total: dueAlertes.length, searched, quotaExhausted: false };
   }
-
   async runDigestBatch(frequence: AlerteFrequence, intervalMs: number) {
     const cutoff = new Date(Date.now() - intervalMs);
     const dueAlertes = await this.alerteRepository.getDueForDigest(frequence, cutoff);

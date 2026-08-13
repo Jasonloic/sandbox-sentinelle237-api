@@ -241,3 +241,26 @@ model DossierFlux {
   @@unique([dossier_id, flux_id])
   @@map("dossier_flux")
 }
+
+model CoursMatierePremiere {
+  id_cours      String   @id @default(uuid())
+  matiere       String   // "or" | "argent" | "platine" | "palladium" | "cuivre" | "petrole_brent" | "petrole_wti"
+  prix          Float
+  devise        String   @default("USD")
+  variation_24h Float?
+  recorded_at   DateTime @default(now())
+
+  @@index([matiere, recorded_at])
+  @@map("cours_matieres_premieres")
+}
+
+model CoursDevise {
+  id_cours      String   @id @default(uuid())
+  paire         String   // ex: "EUR/USD", "EUR/XAF"
+  taux          Float
+  variation_24h Float?
+  recorded_at   DateTime @default(now())
+
+  @@index([paire, recorded_at])
+  @@map("cours_devises")
+}
