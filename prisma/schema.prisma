@@ -36,6 +36,7 @@ model User {
   fluxAbonnes UserFlux[]
   alertes Alerte[]
   dossiers Dossier[]
+  articleInteractions ArticleInteraction[]
 
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -107,17 +108,48 @@ model UserFlux {
   @@map("user_flux")
 }
 
+enum CategorieArticle {
+  politique
+  economie
+  societe
+  securite
+  sport
+  sante
+  technologie
+  environnement
+  culture
+  international
+}
+
+model ArticleInteraction {
+  id_interaction String   @id @default(uuid())
+  user_id        String
+  article_id     String
+  user           User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  article        Article  @relation(fields: [article_id], references: [id_article], onDelete: Cascade)
+  note           String?
+  favori         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([user_id, article_id])
+  @@map("article_interactions")
+}
+
 model Article {
-  id_article       String    @id @default(uuid())
+  id_article       String            @id @default(uuid())
   flux_id          String
-  flux             Flux      @relation(fields: [flux_id], references: [id_flux], onDelete: Cascade)
+  flux             Flux              @relation(fields: [flux_id], references: [id_flux], onDelete: Cascade)
   titre            String
   lien             String
   description      String?
   image            String?
   auteur           String?
   date_publication DateTime?
-  createdAt        DateTime  @default(now())
+  categorie        CategorieArticle?
+  resume           String?
+  interactions     ArticleInteraction[]
+  createdAt        DateTime          @default(now())
 
   @@unique([flux_id, lien])
   @@map("articles")

@@ -1,0 +1,15 @@
+import { Router } from "express";
+import ArticleController from "../controllers/ArticleController";
+import ValidateRequest from "../middlewares/ValidateRequest";
+import { annotationSchema, favoriSchema } from "../validations/ArticleValidations";
+
+const router = Router();
+const articleController = new ArticleController();
+
+router
+    .get("/favoris", articleController.getFavoris.bind(articleController))
+    .get("/:id", articleController.getById.bind(articleController))
+    .patch("/:id/annotation", ValidateRequest(annotationSchema), articleController.setAnnotation.bind(articleController))
+    .patch("/:id/favori", ValidateRequest(favoriSchema), articleController.setFavori.bind(articleController));
+
+export { router as ArticleRoutes };
