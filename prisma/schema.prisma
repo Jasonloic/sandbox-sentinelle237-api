@@ -58,25 +58,39 @@ enum Zone {
   oceanie
   international
 }
+model CategorieFlux {
+  id_categorie String   @id @default(uuid())
+  code         String   @unique
+  libelle      String
+  couleur      String
+  description  String?
+  flux         Flux[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("categories_flux")
+}
 
 model Flux {
-  id_flux         String     @id @default(uuid())
+  id_flux         String         @id @default(uuid())
   nom             String
   url_site        String?
-  lien_rss        String     @unique
+  lien_rss        String         @unique
   logo            String?
-  type            FluxType   @default(rss)
+  type            FluxType       @default(rss)
   zone            Zone?
-  is_suggestion   Boolean    @default(false)
+  categorie_id    String?
+  categorie       CategorieFlux? @relation(fields: [categorie_id], references: [id_categorie])
+  is_suggestion   Boolean        @default(false)
   last_crawled_at DateTime?
   created_by      String?
-  createdByUser   User?      @relation("FluxCreator", fields: [created_by], references: [id_user])
+  createdByUser   User?          @relation("FluxCreator", fields: [created_by], references: [id_user])
   subscribers     UserFlux[]
   articles        Article[]
   dossiers        DossierFlux[]
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@map("flux")
 }
