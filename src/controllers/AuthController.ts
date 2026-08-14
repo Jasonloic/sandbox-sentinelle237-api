@@ -48,11 +48,11 @@ export default class AuthController {
         try {
             const result = await this.authService.login(req.body);
             if ("requiresTotp" in result) {
-                res.status(200).json(result);
-                return;
+            res.status(200).json(result);
+            return;
             }
-            const { accessToken, refreshToken } = result;
-            res.cookie("jwt", refreshToken, COOKIE_OPTIONS).status(200).json({ accessToken });
+            const { accessToken, refreshToken, user } = result;
+            res.cookie("jwt", refreshToken, COOKIE_OPTIONS).status(200).json({ accessToken, user });
         } catch (err) {
             next(err);
         }
@@ -60,8 +60,8 @@ export default class AuthController {
 
     async verifyTotpLogin(req: Request, res: Response, next: NextFunction) {
         try {
-            const { accessToken, refreshToken } = await this.authService.verifyTotpLogin(req.body);
-            res.cookie("jwt", refreshToken, COOKIE_OPTIONS).status(200).json({ accessToken });
+            const { accessToken, refreshToken, user } = await this.authService.verifyTotpLogin(req.body);
+            res.cookie("jwt", refreshToken, COOKIE_OPTIONS).status(200).json({ accessToken, user });
         } catch (err) {
             next(err);
         }
@@ -74,6 +74,24 @@ export default class AuthController {
         } catch (err) {
             next(err);
         }
+    }
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+        await this.authService.forgotPassword(req.body.mail);
+        res.status(200).json({ message: "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé." });
+    } catch (err) {
+        next(err);
+    }
+    }
+
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+        await this.authService.resetPassword(req.body.token, req.body.newPassword);
+        res.status(200).json({ message: "Mot de passe réinitialisé avec succès" });
+    } catch (err) {
+        next(err);
+    }
     }
 
     async logout(req: Request, res: Response, next: NextFunction) {

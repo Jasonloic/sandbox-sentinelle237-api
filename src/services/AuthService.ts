@@ -4,6 +4,7 @@ import UserService from "./UserService";
 import { JwtService, type AuthTokens } from "./JwtService";
 import { MailService } from "./MailService";
 import { TotpService } from "./TotpService";
+import TotpAuthService from "./TotpAuthService";
 import { generateRawToken, hashToken } from "../utils/crypto";
 import { HttpException } from "../utils/HttpExceptions";
 import type {
@@ -22,6 +23,7 @@ const userService = new UserService();
 const jwtService = new JwtService();
 const mailService = new MailService();
 const totpService = new TotpService();
+const totpAuthService = new TotpAuthService();
 
 export default class AuthService {
     private readonly userService: UserService;
@@ -85,7 +87,9 @@ export default class AuthService {
         await this.mailService.sendVerificationEmail(user.mail, user.pseudo, rawToken);
     }
 
-    async login(data: LoginUserInput): Promise<AuthTokens | { requiresTotp: true; tempToken: string }> {
+    async login(
+        data: LoginUserInput
+        ): Promise<(AuthTokens & { user: ReturnType<UserService["sanitize"]> }) | { requiresTotp: true; tempToken: string }> {
         const user = await this.userService.getByKey("mail", data.mail);
         if (!user || !(await bcrypt.compare(data.password, user.password))) {
             throw new HttpException(400, "Identifiants invalides");
@@ -95,27 +99,31 @@ export default class AuthService {
 
         if (user.totp_enabled) {
             const tempToken = this.jwtService.sign(
-                { id_user: user.id_user, purpose: "totp-pending" },
-                TOTP_PENDING_TOKEN_SECRET,
-                { expiresIn: "5m" }
+            { id_user: user.id_user, purpose: "totp-pending" },
+            TOTP_PENDING_TOKEN_SECRET,
+            { expiresIn: "5m" }
             );
             return { requiresTotp: true, tempToken };
         }
 
-        return this.jwtService.genAuthTokens(this.buildPayload(user));
+        const tokens = this.jwtService.genAuthTokens(this.buildPayload(user));
+        return { ...tokens, user: this.userService.sanitize(user) };
     }
 
-    async verifyTotpLogin(data: VerifyTotpLoginInput): Promise<AuthTokens> {
+    async verifyTotpLogin(
+        data: VerifyTotpLoginInput
+        ): Promise<AuthTokens & { user: ReturnType<UserService["sanitize"]> }> {
         const decoded = await this.jwtService.verify(data.tempToken, TOTP_PENDING_TOKEN_SECRET);
         if (decoded.purpose !== "totp-pending") throw new HttpException(403, "Forbidden");
 
         const user = await this.userService.getById(decoded.id_user as string);
         if (!user.totp_enabled || !user.totp_secret) throw new HttpException(400, "TOTP non activé");
 
-        const isValid = await this.totpService.verify(data.code, user.totp_secret); // await ajouté
+        const isValid = await totpAuthService.verifyCodeOrRecovery(user, data.code);
         if (!isValid) throw new HttpException(400, "Code TOTP invalide");
 
-        return this.jwtService.genAuthTokens(this.buildPayload(user));
+        const tokens = this.jwtService.genAuthTokens(this.buildPayload(user));
+        return { ...tokens, user: this.userService.sanitize(user) };
     }
 
     async refresh(refreshToken: string): Promise<{ accessToken: string }> {
@@ -126,5 +134,40 @@ export default class AuthService {
 
         const { accessToken } = this.jwtService.genAuthTokens(this.buildPayload(user));
         return { accessToken };
+    }
+
+    async forgotPassword(mail: string) {
+    const user = await this.userService.getByKey("mail", mail);
+
+    if (!user) return;
+
+    const rawToken = generateRawToken();
+    const hours = Number(process.env.RESET_PASSWORD_TOKEN_EXPIRY_HOURS || 1);
+    const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+
+    await this.userService.updateRaw(user.id_user, {
+        token_reset_password: hashToken(rawToken),
+        token_reset_password_expiration: expiresAt,
+    });
+
+    await this.mailService.sendResetPasswordEmail(user.mail, user.pseudo, rawToken);
+    }
+
+    async resetPassword(rawToken: string, newPassword: string) {
+    const hashed = hashToken(rawToken);
+    const user = await this.userService.getByKey("token_reset_password", hashed);
+
+    if (!user) throw new HttpException(400, "Token invalide");
+    if (!user.token_reset_password_expiration || user.token_reset_password_expiration < new Date()) {
+        throw new HttpException(400, "Token expiré, refais une demande de réinitialisation");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.userService.updateRaw(user.id_user, {
+        password: hashedPassword,
+        token_reset_password: null,
+        token_reset_password_expiration: null,
+    });
     }
 }
