@@ -13,6 +13,12 @@ router
         ValidateRequest(enableTotpConfirmSchema),
         totpController.confirmEnable.bind(totpController)
     )
-    .post("/disable", ValidateRequest(disableTotpSchema), totpController.disable.bind(totpController));
+    .post("/disable", ValidateRequest(disableTotpSchema), totpController.disable.bind(totpController))
+    .post(
+        "/recovery-codes/regenerate",
+        ValidateRequest(disableTotpSchema),
+        totpController.regenerateRecoveryCodes.bind(totpController)
+    )
+    .get("/recovery-codes/remaining", totpController.getRemainingRecoveryCodes.bind(totpController));
 
 export { router as TotpRoutes };

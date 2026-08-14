@@ -1,4 +1,5 @@
 import { Role, Offre } from "@prisma/client";
+import { isRecoveryCodeFormat } from "../utils/recoveryCodes";
 import { z } from "zod";
 
 export const registerUserSchema = z.object({
@@ -16,11 +17,18 @@ export const loginUserSchema = z.object({
 });
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 
+const codeOuRecuperationSchema = z
+  .string()
+  .refine((v) => /^\d{6}$/.test(v) || isRecoveryCodeFormat(v), {
+    message: "Code TOTP à 6 chiffres ou code de récupération au format XXXX-XXXX",
+  });
+
 export const verifyTotpLoginSchema = z.object({
-    tempToken: z.string().min(1),
-    code: z.string().length(6, "Le code doit contenir 6 chiffres"),
+  tempToken: z.string().min(1),
+  code: codeOuRecuperationSchema,
 });
 export type VerifyTotpLoginInput = z.infer<typeof verifyTotpLoginSchema>;
+
 
 export const verifyEmailSchema = z.object({
     token: z.string().min(1, "Token requis"),
@@ -63,6 +71,17 @@ export const enableTotpConfirmSchema = z.object({
 export const disableTotpSchema = z.object({
     code: z.string().length(6, "Le code doit contenir 6 chiffres"),
 });
+
+export const forgotPasswordSchema = z.object({
+  mail: z.string().email("Email invalide"),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token requis"),
+  newPassword: z.string().min(8, "8 caractères minimum"),
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 const booleanQueryParam = z
     .enum(["true", "false"])

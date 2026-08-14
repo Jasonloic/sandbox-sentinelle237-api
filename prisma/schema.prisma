@@ -30,8 +30,11 @@ model User {
   token_expiration   DateTime?
   totp_secret        String?
   totp_enabled       Boolean   @default(false)
+  token_reset_password             String?
+  token_reset_password_expiration  DateTime?
   offre              Offre     @default(community)
 
+  totpRecoveryCodes TotpRecoveryCode[]
   fluxCrees   Flux[]     @relation("FluxCreator")
   fluxAbonnes UserFlux[]
   alertes Alerte[]
@@ -42,6 +45,17 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   @@map("users")
+}
+
+model TotpRecoveryCode {
+  id_code   String   @id @default(uuid())
+  user_id   String
+  user      User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  code_hash String
+  utilise   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("totp_recovery_codes")
 }
 
 enum FluxType {
