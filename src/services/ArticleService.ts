@@ -67,4 +67,21 @@ export default class ArticleService {
             },
         };
     }
+    async getAnnotes(userId: string, query: ListFavorisQuery) {
+        const skip = (query.page - 1) * query.limit;
+        const { interactions, total } = await this.articleInteractionRepository.getAnnotes(userId, {
+            skip,
+            take: query.limit,
+        });
+
+        return {
+            articles: interactions.map((i) => ({ ...i.article, note: i.note, favori: i.favori })),
+            pagination: {
+            total,
+            page: query.page,
+            limit: query.limit,
+            totalPages: Math.max(Math.ceil(total / query.limit), 1),
+            },
+        };
+    }
 }

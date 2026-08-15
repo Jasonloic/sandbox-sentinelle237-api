@@ -61,4 +61,14 @@ export default class ArticleController {
             next(err);
         }
     }
+    async getAnnotes(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            if (!req.user) throw new HttpException(401, "Unauthorized");
+            const query = listFavorisQuerySchema.parse(req.query);
+            const result = await this.articleService.getAnnotes(req.user.id_user, query);
+            res.status(200).json(result);
+        } catch (err) {
+            handleZodError(err, next);
+        }
+    }
 }
