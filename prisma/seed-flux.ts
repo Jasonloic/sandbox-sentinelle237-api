@@ -37,33 +37,22 @@ function detectType(url: string): FluxType {
 
 const FRANCE_24 = [
   // Français
-  { nom: "France 24 (FR) - Les Titres", lien_rss: "https://www.france24.com/fr/rss" },
   { nom: "France 24 (FR) - Économie", lien_rss: "https://www.france24.com/fr/%C3%A9conomie/rss", categorie: "economie" },
   { nom: "France 24 (FR) - Culture", lien_rss: "https://www.france24.com/fr/culture/rss", categorie: "culture" },
   { nom: "France 24 (FR) - Sport", lien_rss: "https://www.france24.com/fr/sports/rss", categorie: "sport" },
-  { nom: "France 24 (FR) - Planète", lien_rss: "https://www.france24.com/fr/plan%C3%A8te/rss", categorie: "environnement" },
+  { nom: "France 24 (FR) - Moyen-Orient", lien_rss: "https://www.france24.com/fr/moyen-orient/rss", categorie: "environnement" },
+  { nom: "France 24 (FR) - Afrique", lien_rss: "https://www.france24.com/fr/afrique/rss", categorie: "environnement" },
   // Anglais
-  { nom: "France 24 (EN) - Top Stories", lien_rss: "https://www.france24.com/en/rss" },
   { nom: "France 24 (EN) - Business", lien_rss: "https://www.france24.com/en/business/rss", categorie: "economie" },
   { nom: "France 24 (EN) - Culture", lien_rss: "https://www.france24.com/en/culture/rss", categorie: "culture" },
   { nom: "France 24 (EN) - Sport", lien_rss: "https://www.france24.com/en/sports/rss", categorie: "sport" },
   { nom: "France 24 (EN) - Earth", lien_rss: "https://www.france24.com/en/earth/rss", categorie: "environnement" },
-  // Arabe
-  { nom: "France 24 (AR) - الأخبار", lien_rss: "https://www.france24.com/ar/rss" },
-  { nom: "France 24 (AR) - اقتصاد", lien_rss: "https://www.france24.com/ar/%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF/rss", categorie: "economie" },
-  { nom: "France 24 (AR) - ثقافة", lien_rss: "https://www.france24.com/ar/%D8%AB%D9%80%D9%82%D8%A7%D9%81%D8%A9/rss", categorie: "culture" },
-  { nom: "France 24 (AR) - رياضة", lien_rss: "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss", categorie: "sport" },
-  // Espagnol
-  { nom: "France 24 (ES) - Titulares", lien_rss: "https://www.france24.com/es/rss" },
-  { nom: "France 24 (ES) - Economía", lien_rss: "https://www.france24.com/es/econom%C3%ADa/rss", categorie: "economie" },
-  { nom: "France 24 (ES) - Cultura", lien_rss: "https://www.france24.com/es/cultura/rss", categorie: "culture" },
-  { nom: "France 24 (ES) - Deportes", lien_rss: "https://www.france24.com/es/deportes/rss", categorie: "sport" },
-  { nom: "France 24 (ES) - Medio Ambiente", lien_rss: "https://www.france24.com/es/medio-ambiente/rss", categorie: "environnement" },
+
 ];
 
 const RFI = [
   // Français
-  { nom: "RFI (FR) - Mondu", lien_rss: "https://www.rfi.fr/fr/rss" },
+  { nom: "RFI (FR) - Monde", lien_rss: "https://www.rfi.fr/fr/rss" },
   { nom: "RFI (FR) - Économie", lien_rss: "https://www.rfi.fr/fr/%C3%A9conomie/rss", categorie: "economie" },
   { nom: "RFI (FR) - Culture", lien_rss: "https://www.rfi.fr/fr/culture/rss", categorie: "culture" },
   { nom: "RFI (FR) - Sports", lien_rss: "https://www.rfi.fr/fr/sports/rss", categorie: "sport" },

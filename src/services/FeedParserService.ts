@@ -34,7 +34,11 @@ const BROWSER_HEADERS = {
   "Upgrade-Insecure-Requests": "1",
 };
 
-async function fetchWithTimeout(url: string, timeoutMs = 12000, extraHeaders?: Record<string, string>): Promise<Response> {
+async function fetchWithTimeout(
+    url: string,
+    timeoutMs = 15000,
+    extraHeaders?: Record<string, string>
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -49,16 +53,34 @@ async function fetchWithTimeout(url: string, timeoutMs = 12000, extraHeaders?: R
 }
 
 export class FeedParserService {
-  /**
-   * Parse un flux RSS/Atom en utilisant toujours nos headers personnalisés
-   */
+  private readonly nitterInstances: string[];
+  private readonly youtubeApiKey: string | undefined;
+
+  constructor() {
+    this.nitterInstances = [
+      process.env.NITTER_INSTANCE,
+      "https://xcancel.com",
+      "https://nitter.catsarch.com",
+      "https://nitter.tiekoetter.com",
+      "https://nitter.kareem.one",
+      "https://lightbrd.com",
+    ].filter(Boolean) as string[];
+
+    this.youtubeApiKey = process.env.YOUTUBE_API_KEY;
+  }
+
   async parseFeed(feedUrl: string): Promise<ParsedFeed> {
     try {
-      const res = await fetchWithTimeout(feedUrl);
+      const isFeed = this.looksLikeFeedUrl(feedUrl);
+      const extraHeaders = isFeed
+          ? { Accept: "application/rss+xml,application/atom+xml,application/xml;q=0.9,*/*;q=0.8" }
+          : {};
+
+      const res = await fetchWithTimeout(feedUrl, 15000, extraHeaders);
       if (res.status === 403 || res.status === 429) {
         throw new HttpException(
             422,
-            "Ce site bloque les requêtes automatisées. Essaie de coller directement l'URL du flux RSS (souvent /rss, /feed ou /feed.xml)."
+            "Ce site bloque les requêtes automatisées. Essaie de coller directement l'URL du flux RSS."
         );
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -70,73 +92,210 @@ export class FeedParserService {
     }
   }
 
-  /**
-   * Découvre l'URL du flux RSS sur une page web
-   */
   async discoverFeedUrl(pageUrl: string): Promise<string> {
-    // 1. Essayer directement si c'est déjà un flux
+    if (this.looksLikeFeedUrl(pageUrl)) {
+      try {
+        await this.parseFeed(pageUrl);
+        return pageUrl;
+      } catch (err) {
+        if (err instanceof HttpException) throw err;
+        throw new HttpException(422, this.explainFailure(err, true));
+      }
+    }
+
     try {
       await this.parseFeed(pageUrl);
       return pageUrl;
     } catch {
-      // Ce n'est pas un flux direct, on continue
+      /* pas un flux direct */
     }
 
-    // 2. Récupérer le HTML de la page
     let html: string;
+    let htmlBlocked = false;
     try {
       const res = await fetchWithTimeout(pageUrl);
       if (res.status === 403 || res.status === 429) {
-        // 3. Fallback : essayer les chemins communs si le HTML est bloqué
-        return await this.tryCommonFeedPaths(pageUrl);
+        htmlBlocked = true;
+      } else if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      } else {
+        html = await res.text();
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      html = await res.text();
     } catch (err) {
       if (err instanceof HttpException) throw err;
-      // Si le site est down, essayer quand même les chemins communs
-      try {
-        return await this.tryCommonFeedPaths(pageUrl);
-      } catch {
-        throw new HttpException(422, "Impossible d'accéder à ce site (hors ligne, trop lent, ou bloque les robots)");
+      htmlBlocked = true;
+    }
+
+    if (!htmlBlocked && html!) {
+      const feedUrl = this.extractFeedUrlFromHtml(html, pageUrl);
+      if (feedUrl) {
+        try {
+          await this.parseFeed(feedUrl);
+          return feedUrl;
+        } catch {
+          /* lien découvert mort */
+        }
       }
     }
 
-    // 4. Chercher <link rel="alternate" type="application/rss+xml"> dans le HTML
-    const feedUrl = this.extractFeedUrlFromHtml(html, pageUrl);
-    if (feedUrl) {
-      // Vérifier que le flux découvert fonctionne réellement
-      try {
-        await this.parseFeed(feedUrl);
-        return feedUrl;
-      } catch {
-        // Le lien dans le HTML est mort, essayer les chemins communs
-        return await this.tryCommonFeedPaths(pageUrl);
-      }
-    }
-
-    // 5. Dernier recours : chemins communs
     return await this.tryCommonFeedPaths(pageUrl);
   }
 
+  async resolveTwitterFeedUrl(username: string): Promise<string> {
+    const clean = username.replace(/^@/, "").replace(/\/$/, "");
+
+    for (const instance of this.nitterInstances) {
+      const url = `${instance}/${clean}/rss`;
+      try {
+        await this.parseFeed(url);
+        return url;
+      } catch {
+        continue;
+      }
+    }
+
+    throw new HttpException(
+        422,
+        "Aucune instance Nitter disponible pour ce compte Twitter/X. Réessaie plus tard."
+    );
+  }
+
   /**
-   * Essaie les chemins RSS les plus courants
+   * YOUTUBE : résolution par channel_id, @handle, /user/ ou /c/
    */
+  async resolveYoutubeFeedUrl(channelUrl: string): Promise<string> {
+    const normalized = channelUrl.replace(/\/$/, "");
+
+    // 1. Channel ID direct (/channel/UC...)
+    const directMatch = normalized.match(/\/channel\/(UC[\w-]+)/);
+    if (directMatch) {
+      return `https://www.youtube.com/feeds/videos.xml?channel_id=${directMatch[1]}`;
+    }
+
+    // 2. Handle @username
+    const handleMatch = normalized.match(/\/@([\w-]+)/);
+    if (handleMatch) {
+      const handle = handleMatch[1];
+
+      // 2a. API YouTube Data v3 (si clé configurée) — méthode fiable
+      if (this.youtubeApiKey) {
+        const channelId = await this.resolveHandleViaApi(handle, this.youtubeApiKey);
+        if (channelId) {
+          return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+        }
+      }
+
+      // 2b. oEmbed (API légère, souvent moins bloquée que le HTML)
+      const channelId = await this.resolveHandleViaOembed(handle);
+      if (channelId) {
+        return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+      }
+
+      // 2c. HTML scraping (dernier recours)
+      const channelIdHtml = await this.resolveHandleViaHtml(handle);
+      if (channelIdHtml) {
+        return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdHtml}`;
+      }
+
+      throw new HttpException(
+          422,
+          `Impossible de résoudre le handle @${handle}. ` +
+          `Collez directement l'URL du flux RSS (ex: https://www.youtube.com/feeds/videos.xml?channel_id=UC...) ` +
+          `ou configurez YOUTUBE_API_KEY dans votre .env pour activer la résolution automatique.`
+      );
+    }
+
+    // 3. Legacy /user/ ou /c/
+    const legacyMatch = normalized.match(/\/(?:user|c)\/([\w-]+)/);
+    if (legacyMatch) {
+      return `https://www.youtube.com/feeds/videos.xml?user=${legacyMatch[1]}`;
+    }
+
+    throw new HttpException(
+        422,
+        "URL YouTube non reconnue. Utilisez /channel/UC..., /@handle, /user/... ou collez directement l'URL du flux RSS."
+    );
+  }
+
+  // ─── Méthodes privées YouTube ───
+
+  private async resolveHandleViaApi(handle: string, apiKey: string): Promise<string | null> {
+    try {
+      const res = await fetchWithTimeout(
+          `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`,
+          10000
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as { items?: { id: string }[] };
+      return data.items?.[0]?.id || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async resolveHandleViaOembed(handle: string): Promise<string | null> {
+    try {
+      const res = await fetchWithTimeout(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/@${handle}`)}&format=json`,
+          10000
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as { author_url?: string };
+      const match = data.author_url?.match(/\/channel\/(UC[\w-]+)/);
+      return match?.[1] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async resolveHandleViaHtml(handle: string): Promise<string | null> {
+    try {
+      const res = await fetchWithTimeout(`https://www.youtube.com/@${handle}`, 15000, {
+        Cookie: "CONSENT=YES+cb.20210328-17-p0.en+FX+{}",
+      });
+      if (!res.ok) return null;
+      const html = await res.text();
+      const m =
+          html.match(/"channelId":"(UC[\w-]+)"/) ||
+          html.match(/<meta itemprop="channelId" content="(UC[\w-]+)">/);
+      return m?.[1] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // ─── Méthodes privées RSS classique ───
+
+  private looksLikeFeedUrl(url: string): boolean {
+    const lower = url.toLowerCase();
+    const feedExts = [".xml", ".rss", ".atom", ".rdf", ".json"];
+    const feedPaths = ["/rss", "/feed", "/atom", "/feeds/", "/index.xml", "/index.rss"];
+    return feedExts.some((e) => lower.endsWith(e)) || feedPaths.some((p) => lower.includes(p));
+  }
+
   private async tryCommonFeedPaths(baseUrl: string): Promise<string> {
-    const url = new URL(baseUrl);
+    const parsed = new URL(baseUrl);
+    const origin = parsed.origin;
+    const langMatch = parsed.pathname.match(/^\/(fr|en|es|ar|de|it)\//);
+    const langPrefix = langMatch ? `/${langMatch[1]}` : "";
+
     const candidates = [
+      `${langPrefix}/rss`,
+      `${langPrefix}/feed`,
+      `${langPrefix}/feed.xml`,
+      `${langPrefix}/rss.xml`,
       "/rss",
       "/feed",
       "/feed.xml",
       "/rss.xml",
       "/index.xml",
       "/atom.xml",
-      "/feeds/posts/default", // Blogger
-      "/?feed=rss2", // WordPress legacy
+      "/feeds/posts/default",
+      "/?feed=rss2",
     ];
 
     for (const path of candidates) {
-      const candidate = new URL(path, url.origin).toString();
+      const candidate = new URL(path, origin).toString();
       try {
         await this.parseFeed(candidate);
         return candidate;
@@ -145,7 +304,10 @@ export class FeedParserService {
       }
     }
 
-    throw new HttpException(422, "Aucun flux RSS détecté sur ce site. Essaie de coller directement l'URL du flux.");
+    throw new HttpException(
+        422,
+        "Aucun flux RSS détecté sur ce site. Essaie de coller directement l'URL du flux (/rss, /feed, /feed.xml...)."
+    );
   }
 
   private extractFeedUrlFromHtml(html: string, baseUrl: string): string | null {
@@ -160,43 +322,28 @@ export class FeedParserService {
       const match = html.match(regex);
       if (match) {
         const discovered = match[1];
-        return discovered.startsWith("http") ? discovered : new URL(discovered, baseUrl).toString();
+        return discovered.startsWith("http")
+            ? discovered
+            : new URL(discovered, baseUrl).toString();
       }
     }
     return null;
   }
 
-  async resolveYoutubeFeedUrl(channelUrl: string): Promise<string> {
-    const directMatch = channelUrl.match(/\/channel\/(UC[\w-]+)/);
-    if (directMatch) {
-      return `https://www.youtube.com/feeds/videos.xml?channel_id=${directMatch[1]}`;
+  private explainFailure(err: unknown, isDirectFeed = false): string {
+    const msg = err instanceof Error ? err.message : "";
+    if (/403|forbidden/i.test(msg)) {
+      return isDirectFeed
+          ? "Ce flux RSS est inaccessible : le site bloque les requêtes automatisées (403)."
+          : "Ce site bloque les requêtes automatisées (403). Essaie de coller directement l'URL du flux RSS.";
     }
-
-    let html: string;
-    try {
-      const res = await fetchWithTimeout(channelUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      html = await res.text();
-    } catch {
-      throw new HttpException(422, "Impossible d'accéder à cette chaîne YouTube");
+    if (/timeout|abort|etimedout|econnrefused/i.test(msg)) {
+      return isDirectFeed
+          ? "Ce flux RSS est inaccessible (timeout). Le site est peut-être hors ligne ou bloqué depuis ton serveur."
+          : "Le site est inaccessible (timeout). Vérifie que le domaine est joignable depuis ton serveur.";
     }
-
-    const match =
-        html.match(/"channelId":"(UC[\w-]+)"/) ||
-        html.match(/<meta itemprop="channelId" content="(UC[\w-]+)">/);
-    if (!match) throw new HttpException(422, "Impossible de trouver l'identifiant de cette chaîne YouTube");
-
-    return `https://www.youtube.com/feeds/videos.xml?channel_id=${match[1]}`;
-  }
-
-  private explainFailure(err: unknown): string {
-    const message = err instanceof Error ? err.message : "";
-    if (/403|forbidden/i.test(message)) {
-      return "Ce site bloque les requêtes automatisées (403). Essaie de coller directement l'URL du flux RSS trouvée sur le site.";
-    }
-    if (/timeout|abort/i.test(message)) {
-      return "Le site met trop de temps à répondre, réessaie plus tard.";
-    }
-    return "Impossible de lire ce flux RSS (format invalide ou inaccessible)";
+    return isDirectFeed
+        ? "Impossible de lire ce flux RSS (format invalide ou inaccessible). Vérifie l'URL."
+        : "Impossible de lire ce flux RSS (format invalide ou inaccessible)";
   }
 }
