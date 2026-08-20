@@ -9,6 +9,8 @@ import { CategorieFluxRoutes } from "./CategorieFluxRoutes";
 import { DashboardRoutes } from "./DashboardRoutes";
 import { ArticleRoutes } from "./ArticleRoutes";
 import { RechercheAvanceeRoutes } from "./RechercheAvanceeRoutes";
+import { MLRoutes } from "./MLRoutes";
+import { RevueRoutes } from "./RevueRoutes";
 import Auth from "../middlewares/Auth";
 
 const router = Router();
@@ -24,5 +26,7 @@ router.use("/dossiers", authMiddleware.verifyToken, DossierRoutes);
 router.use("/dashboard", authMiddleware.verifyToken, DashboardRoutes);
 router.use("/articles", authMiddleware.verifyToken, ArticleRoutes);
 router.use("/recherche-avancee", authMiddleware.verifyToken, RechercheAvanceeRoutes);
+router.use("/ml", authMiddleware.verifyToken, MLRoutes);
+router.use("/revues", authMiddleware.verifyToken, RevueRoutes);
 
 export { router as AppRoutes };

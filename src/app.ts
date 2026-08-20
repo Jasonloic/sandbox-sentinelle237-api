@@ -9,6 +9,8 @@ import { HttpException } from "./utils/HttpExceptions";
 import { startFluxRefreshJob } from "./jobs/FluxRefreshJob";
 import { startAlerteJobs } from "./jobs/AlerteJob";
 import { startDashboardJobs } from "./jobs/DashboardJob";
+import { mlInferenceService } from "./services/MLInferenceService";
+
 
 const app = express();
 app.set("trust proxy", 1);
@@ -44,6 +46,7 @@ if (require.main === module) {
         console.log(`[server]: server is running on port ${process.env.PORT || 3000}`);
       });
       await connectToDB();
+      await mlInferenceService.init();
       startFluxRefreshJob();
       startAlerteJobs();
       startDashboardJobs();

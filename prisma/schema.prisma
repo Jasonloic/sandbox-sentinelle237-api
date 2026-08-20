@@ -40,6 +40,8 @@ model User {
   alertes Alerte[]
   dossiers Dossier[]
   articleInteractions ArticleInteraction[]
+  modelesPdf     ModelePdf[]
+  revuesDePresse RevueDePresse[]
 
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -167,6 +169,16 @@ model Article {
 
   @@unique([flux_id, lien])
   @@map("articles")
+}
+
+model FeedbackClassification {
+  id_feedback               String            @id @default(uuid())
+  texte                      String
+  categorie                  CategorieArticle
+  utilise_pour_entrainement  Boolean           @default(false)
+  createdAt                  DateTime          @default(now())
+
+  @@map("feedback_classification")
 }
 
 enum AlerteSource {
@@ -309,4 +321,30 @@ model CoursDevise {
 
   @@index([paire, recorded_at])
   @@map("cours_devises")
+}
+
+model ModelePdf {
+  id_modele      String          @id @default(uuid())
+  user_id        String
+  user           User            @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  nom            String
+  chemin_fichier String
+  createdAt      DateTime        @default(now())
+  revues         RevueDePresse[]
+
+  @@map("modeles_pdf")
+}
+
+model RevueDePresse {
+  id_revue       String     @id @default(uuid())
+  user_id        String
+  user           User       @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  modele_id      String
+  modele         ModelePdf  @relation(fields: [modele_id], references: [id_modele])
+  dossier_id     String?
+  titre          String
+  chemin_fichier String
+  createdAt      DateTime   @default(now())
+
+  @@map("revues_de_presse")
 }
