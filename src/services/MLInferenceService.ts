@@ -27,7 +27,7 @@ class MLInferenceServiceSingleton {
     }
 
     private subscribeToReloads() {
-        const subscriber = new Redis({ host: REDIS_HOST || "127.0.0.1", port: Number(REDIS_PORT) || 6379 });
+        const subscriber = new Redis({ host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) || 6379 });
         const channel = ML_RELOAD_CHANNEL || "model:reloaded";
 
         subscriber.subscribe(channel, (err) => {
