@@ -3,7 +3,7 @@
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "bcrypt": "^6.0.0",
-    "bullmq": "^6.0.7",
+    "bullmq": "^6.1.2",
     "cheerio": "^1.2.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",

@@ -5,6 +5,8 @@ import UserFluxRepository from "../repositories/UserFluxRepository";
 import CategorieFluxRepository from "../repositories/CategorieFluxRepository";
 import { FeedParserService, type ParsedFeed } from "./FeedParserService";
 import { TelegramService } from "./TelegramService";
+import { mlInferenceService } from "./MLInferenceService";
+import { genererResumeExtractif } from "../utils/resume";
 import { extractText, safeDate } from "../utils/sanitize";
 import { HttpException } from "../utils/HttpExceptions";
 import type {
@@ -133,6 +135,31 @@ export default class FluxService {
 
     if (data.length > 0) {
       await this.articleRepository.createMany(data);
+
+      // Classification + résumé en tâche de fond — n'échoue jamais bruyamment le crawl
+      this.classifierArticlesEnArrierePlan(flux_id, data).catch((err) =>
+          console.error("[classification]: erreur non bloquante:", err)
+      );
+    }
+  }
+
+  private async classifierArticlesEnArrierePlan(flux_id: string, articlesData: Prisma.ArticleCreateManyInput[]) {
+    if (!mlInferenceService.isReady()) return;
+
+    const articlesCreated = await this.articleRepository.getByLiens(
+        flux_id,
+        articlesData.map((a) => a.lien)
+    );
+
+    for (const article of articlesCreated) {
+      const texte = `${article.titre} ${article.description ?? ""}`.trim();
+      const resultat = await mlInferenceService.classify(texte);
+      const resume = genererResumeExtractif(article.description, article.titre);
+
+      await this.articleRepository.updateCategorieEtResume(article.id_article, {
+        categorie: resultat?.categorie ?? null,
+        resume,
+      });
     }
   }
 
@@ -146,7 +173,6 @@ export default class FluxService {
     return parsed.items;
   }
 
-  // Résout un code de catégorie en id, lève une 400 si le code n'existe pas
   private async resolveCategorieId(code: string | undefined): Promise<string | null> {
     if (!code) return null;
     const categorie = await this.categorieFluxRepository.getByCode(code);

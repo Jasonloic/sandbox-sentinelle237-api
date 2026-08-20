@@ -38,6 +38,7 @@ export default class ArticleRepository {
       take: 50,
     });
   }
+
   async searchByKeywordsInFlux(flux_ids: string[], keywords: string[]) {
     if (flux_ids.length === 0 || keywords.length === 0) return [];
 
@@ -54,17 +55,14 @@ export default class ArticleRepository {
     });
   }
 
-  // Récupère un article précis, utilisé par le module Favoris/Annotations et Dossiers/timeline
   async getById(id_article: string) {
     return await this.db.article.findUnique({ where: { id_article } });
   }
 
-  // Utilisé par le hook de classification ML : retrouve les articles fraîchement insérés par leur lien
   async getByLiens(flux_id: string, liens: string[]) {
     return await this.db.article.findMany({ where: { flux_id, lien: { in: liens } } });
   }
 
-  // Utilisé par le hook de classification ML : écrit la catégorie prédite et le résumé extractif
   async updateCategorieEtResume(id_article: string, data: { categorie: CategorieArticle | null; resume: string }) {
     return await this.db.article.update({ where: { id_article }, data });
   }
