@@ -35,6 +35,131 @@ function detectType(url: string): FluxType {
 }
 
 
+const FRANCE_24 = [
+  // Français
+  { nom: "France 24 (FR) - Les Titres", lien_rss: "https://www.france24.com/fr/rss" },
+  { nom: "France 24 (FR) - Économie", lien_rss: "https://www.france24.com/fr/%C3%A9conomie/rss", categorie: "economie" },
+  { nom: "France 24 (FR) - Culture", lien_rss: "https://www.france24.com/fr/culture/rss", categorie: "culture" },
+  { nom: "France 24 (FR) - Sport", lien_rss: "https://www.france24.com/fr/sports/rss", categorie: "sport" },
+  { nom: "France 24 (FR) - Planète", lien_rss: "https://www.france24.com/fr/plan%C3%A8te/rss", categorie: "environnement" },
+  // Anglais
+  { nom: "France 24 (EN) - Top Stories", lien_rss: "https://www.france24.com/en/rss" },
+  { nom: "France 24 (EN) - Business", lien_rss: "https://www.france24.com/en/business/rss", categorie: "economie" },
+  { nom: "France 24 (EN) - Culture", lien_rss: "https://www.france24.com/en/culture/rss", categorie: "culture" },
+  { nom: "France 24 (EN) - Sport", lien_rss: "https://www.france24.com/en/sports/rss", categorie: "sport" },
+  { nom: "France 24 (EN) - Earth", lien_rss: "https://www.france24.com/en/earth/rss", categorie: "environnement" },
+  // Arabe
+  { nom: "France 24 (AR) - الأخبار", lien_rss: "https://www.france24.com/ar/rss" },
+  { nom: "France 24 (AR) - اقتصاد", lien_rss: "https://www.france24.com/ar/%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF/rss", categorie: "economie" },
+  { nom: "France 24 (AR) - ثقافة", lien_rss: "https://www.france24.com/ar/%D8%AB%D9%80%D9%82%D8%A7%D9%81%D8%A9/rss", categorie: "culture" },
+  { nom: "France 24 (AR) - رياضة", lien_rss: "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss", categorie: "sport" },
+  // Espagnol
+  { nom: "France 24 (ES) - Titulares", lien_rss: "https://www.france24.com/es/rss" },
+  { nom: "France 24 (ES) - Economía", lien_rss: "https://www.france24.com/es/econom%C3%ADa/rss", categorie: "economie" },
+  { nom: "France 24 (ES) - Cultura", lien_rss: "https://www.france24.com/es/cultura/rss", categorie: "culture" },
+  { nom: "France 24 (ES) - Deportes", lien_rss: "https://www.france24.com/es/deportes/rss", categorie: "sport" },
+  { nom: "France 24 (ES) - Medio Ambiente", lien_rss: "https://www.france24.com/es/medio-ambiente/rss", categorie: "environnement" },
+];
+
+const RFI = [
+  // Français
+  { nom: "RFI (FR) - Mondu", lien_rss: "https://www.rfi.fr/fr/rss" },
+  { nom: "RFI (FR) - Économie", lien_rss: "https://www.rfi.fr/fr/%C3%A9conomie/rss", categorie: "economie" },
+  { nom: "RFI (FR) - Culture", lien_rss: "https://www.rfi.fr/fr/culture/rss", categorie: "culture" },
+  { nom: "RFI (FR) - Sports", lien_rss: "https://www.rfi.fr/fr/sports/rss", categorie: "sport" },
+  { nom: "RFI (FR) - Science & Santé", lien_rss: "https://www.rfi.fr/fr/science-sant%C3%A9/rss", categorie: "sante" },
+  // Anglais
+  { nom: "RFI (EN) - World", lien_rss: "https://www.rfi.fr/en/rss" },
+  { nom: "RFI (EN) - Business", lien_rss: "https://www.rfi.fr/en/business/rss", categorie: "economie" },
+  { nom: "RFI (EN) - Culture", lien_rss: "https://www.rfi.fr/en/culture/rss", categorie: "culture" },
+  { nom: "RFI (EN) - Sports", lien_rss: "https://www.rfi.fr/en/sports/rss", categorie: "sport" },
+  // Langues Régionales & Africaines
+  { nom: "RFI Hausa", lien_rss: "https://www.rfi.fr/ha/rss" },
+  { nom: "RFI Swahili", lien_rss: "https://www.rfi.fr/sw/rss" },
+  { nom: "RFI Fulfulde", lien_rss: "https://www.rfi.fr/ff/rss" },
+  { nom: "RFI Mandenkan", lien_rss: "https://www.rfi.fr/man/rss" },
+  // Autres Langues Internationales
+  { nom: "RFI Español", lien_rss: "https://www.rfi.fr/es/rss" },
+  { nom: "RFI Português", lien_rss: "https://www.rfi.fr/pt/rss" },
+  { nom: "RFI Brasil", lien_rss: "https://www.rfi.fr/br/rss" },
+  { nom: "RFI Tiếng Việt", lien_rss: "https://www.rfi.fr/vi/rss" },
+  { nom: "RFI Română", lien_rss: "https://www.rfi.fr/ro/rss" },
+  { nom: "RFI Русский", lien_rss: "https://www.rfi.fr/ru/rss" },
+  { nom: "RFI Українською", lien_rss: "https://www.rfi.fr/uk/rss" },
+  { nom: "RFI 简体中文", lien_rss: "https://www.rfi.fr/cn/rss" },
+  { nom: "RFI 繁體中文", lien_rss: "https://www.rfi.fr/tw/rss" },
+  { nom: "RFI Khmer", lien_rss: "https://www.rfi.fr/km/rss" },
+];
+
+const EURONEWS = [
+  { nom: "Euronews (FR)", lien_rss: "https://fr.euronews.com/rss?format=xml" },
+  { nom: "Euronews (EN)", lien_rss: "https://www.euronews.com/rss?format=xml" },
+  { nom: "Euronews (DE)", lien_rss: "https://de.euronews.com/rss?format=xml" },
+  { nom: "Euronews (ES)", lien_rss: "https://es.euronews.com/rss?format=xml" },
+  { nom: "Euronews (IT)", lien_rss: "https://it.euronews.com/rss?format=xml" },
+  { nom: "Euronews (PT)", lien_rss: "https://pt.euronews.com/rss?format=xml" },
+  { nom: "Euronews (RU)", lien_rss: "https://ru.euronews.com/rss?format=xml" },
+  { nom: "Euronews (TR)", lien_rss: "https://tr.euronews.com/rss?format=xml" },
+  { nom: "Euronews (GR)", lien_rss: "https://gr.euronews.com/rss?format=xml" },
+  { nom: "Euronews (HU)", lien_rss: "https://hu.euronews.com/rss?format=xml" },
+  { nom: "Euronews (PER)", lien_rss: "https://per.euronews.com/rss?format=xml" },
+  { nom: "Euronews (AR)", lien_rss: "https://arabic.euronews.com/rss?format=xml" },
+  { nom: "Africanews (FR)", lien_rss: "https://fr.africanews.com/feed/" },
+  { nom: "Africanews (EN)", lien_rss: "https://www.africanews.com/feed/" },
+];
+
+const BBC = [
+  // Anglais & Rubriques
+  { nom: "BBC News (EN) - World", lien_rss: "http://feeds.bbci.co.uk/news/world/rss.xml" },
+  { nom: "BBC News (EN) - Business", lien_rss: "http://feeds.bbci.co.uk/news/business/rss.xml", categorie: "economie" },
+  { nom: "BBC News (EN) - Technology", lien_rss: "http://feeds.bbci.co.uk/news/technology/rss.xml", categorie: "technologie" },
+  { nom: "BBC News (EN) - Science & Environment", lien_rss: "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", categorie: "environnement" },
+  { nom: "BBC News (EN) - Entertainment & Arts", lien_rss: "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml", categorie: "culture" },
+  { nom: "BBC Sport", lien_rss: "http://feeds.bbci.co.uk/sport/rss.xml", categorie: "sport" },
+  // Langues BBC World Service
+  { nom: "BBC Afrique (FR)", lien_rss: "https://www.bbc.com/afrique/index.xml" },
+  { nom: "BBC Hausa", lien_rss: "https://www.bbc.com/hausa/index.xml" },
+  { nom: "BBC Swahili", lien_rss: "https://www.bbc.com/swahili/index.xml" },
+  { nom: "BBC Somali", lien_rss: "https://www.bbc.com/somali/index.xml" },
+  { nom: "BBC Gahuza", lien_rss: "https://www.bbc.com/gahuza/index.xml" },
+  { nom: "BBC Igbo", lien_rss: "https://www.bbc.com/igbo/index.xml" },
+  { nom: "BBC Yoruba", lien_rss: "https://www.bbc.com/yoruba/index.xml" },
+  { nom: "BBC Pidgin", lien_rss: "https://www.bbc.com/pidgin/index.xml" },
+  { nom: "BBC Arabic", lien_rss: "https://www.bbc.com/arabic/index.xml" },
+  { nom: "BBC Persian", lien_rss: "https://www.bbc.com/persian/index.xml" },
+  { nom: "BBC Pashto", lien_rss: "https://www.bbc.com/pashto/index.xml" },
+  { nom: "BBC Urdu", lien_rss: "https://www.bbc.com/urdu/index.xml" },
+  { nom: "BBC Hindi", lien_rss: "https://www.bbc.com/hindi/index.xml" },
+  { nom: "BBC Bengali", lien_rss: "https://www.bbc.com/bengali/index.xml" },
+  { nom: "BBC Tamil", lien_rss: "https://www.bbc.com/tamil/index.xml" },
+  { nom: "BBC Nepali", lien_rss: "https://www.bbc.com/nepali/index.xml" },
+  { nom: "BBC Sinhala", lien_rss: "https://www.bbc.com/sinhala/index.xml" },
+  { nom: "BBC Burmese", lien_rss: "https://www.bbc.com/burmese/index.xml" },
+  { nom: "BBC Indonesian", lien_rss: "https://www.bbc.com/indonesia/index.xml" },
+  { nom: "BBC Vietnamese", lien_rss: "https://www.bbc.com/vietnamese/index.xml" },
+  { nom: "BBC Russian", lien_rss: "https://www.bbc.com/russian/index.xml" },
+  { nom: "BBC Ukrainian", lien_rss: "https://www.bbc.com/ukrainian/index.xml" },
+  { nom: "BBC Brasil", lien_rss: "https://www.bbc.com/portuguese/index.xml" },
+  { nom: "BBC Mundo", lien_rss: "https://www.bbc.com/mundo/index.xml" },
+  { nom: "BBC Turkish", lien_rss: "https://www.bbc.com/turkce/index.xml" },
+];
+
+const CNN = [
+  { nom: "CNN International", lien_rss: "http://rss.cnn.com/rss/edition.rss" },
+  { nom: "CNN World", lien_rss: "http://rss.cnn.com/rss/edition_world.rss" },
+  { nom: "CNN Business", lien_rss: "http://rss.cnn.com/rss/money_news_international.rss", categorie: "economie" },
+  { nom: "CNN Technology", lien_rss: "http://rss.cnn.com/rss/edition_technology.rss", categorie: "technologie" },
+  { nom: "CNN Entertainment", lien_rss: "http://rss.cnn.com/rss/edition_entertainment.rss", categorie: "culture" },
+  { nom: "CNN Sport", lien_rss: "http://rss.cnn.com/rss/edition_sport.rss", categorie: "sport" },
+  { nom: "CNN en Español", lien_rss: "https://cnnespanol.cnn.com/feed/" },
+  { nom: "CNN Brasil", lien_rss: "https://www.cnnbrasil.com.br/feed/" },
+  { nom: "CNN Indonesia", lien_rss: "https://www.cnnindonesia.com/rss" },
+];
+
+// ==========================================
+// AUTRES PAYS ET RÉGIONS
+// ==========================================
+
 const AUSTRALIA = [
   { nom: "Daily Telegraph AU", lien_rss: "https://www.dailytelegraph.com.au/news/breaking-news/rss" },
   { nom: "Sydney Morning Herald", lien_rss: "https://www.smh.com.au/rss/feed.xml" },
@@ -46,13 +171,12 @@ const AUSTRALIA = [
   { nom: "The Canberra Times", lien_rss: "https://www.canberratimes.com.au/rss.xml" },
   { nom: "Brisbane Times", lien_rss: "https://www.brisbanetimes.com.au/rss/feed.xml" },
   { nom: "Independent Australia", lien_rss: "http://feeds.feedburner.com/IndependentAustralia" },
-  { nom: "Business News Australia", lien_rss: "https://www.businessnews.com.au/rssfeed/latest.rss" },
+  { nom: "Business News Australia", lien_rss: "https://www.businessnews.com.au/rssfeed/latest.rss", categorie: "economie" },
   { nom: "InDaily", lien_rss: "https://indaily.com.au/feed/" },
   { nom: "The Mercury", lien_rss: "https://www.themercury.com.au/rss" },
   { nom: "Crikey", lien_rss: "https://feeds.feedburner.com/com/rCTl" },
   { nom: "Michael West", lien_rss: "https://www.michaelwest.com.au/feed/" },
 ];
-
 
 const BANGLADESH = [
   { nom: "The Daily Star", lien_rss: "https://www.thedailystar.net/frontpage/rss.xml" },
@@ -69,7 +193,7 @@ const HONG_KONG = [
   { nom: "Hong Kong Free Press", lien_rss: "https://www.hongkongfp.com/feed/" },
   { nom: "The Standard HK", lien_rss: "https://www.thestandard.com.hk/newsfeed/latest/news.xml" },
   { nom: "頭條日報", lien_rss: "https://hd.stheadline.com/rss/news/daily/" },
-  { nom: "香港經濟日報 hket.com", lien_rss: "https://www.hket.com/rss/hongkong" },
+  { nom: "香港經濟日報 hket.com", lien_rss: "https://www.hket.com/rss/hongkong", categorie: "economie" },
   { nom: "South China Morning Post", lien_rss: "https://www.scmp.com/rss/91/feed" },
   { nom: "hongkongnews.net", lien_rss: "http://feeds.hongkongnews.net/rss/b82693edf38ebff8" },
 ];
@@ -92,17 +216,17 @@ const INDIA = [
   { nom: "News18 World", lien_rss: "https://www.news18.com/rss/world.xml" },
   { nom: "DNA India", lien_rss: "https://www.dnaindia.com/feeds/india.xml" },
   { nom: "Firstpost India", lien_rss: "https://www.firstpost.com/rss/india.xml" },
-  { nom: "Business Standard", lien_rss: "https://www.business-standard.com/rss/home_page_top_stories.rss" },
+  { nom: "Business Standard", lien_rss: "https://www.business-standard.com/rss/home_page_top_stories.rss", categorie: "economie" },
   { nom: "Outlook India", lien_rss: "https://www.outlookindia.com/rss/main/magazine" },
   { nom: "Free Press Journal", lien_rss: "https://www.freepressjournal.in/stories.rss" },
   { nom: "Deccan Chronicle", lien_rss: "https://www.deccanchronicle.com/rss_feed/" },
-  { nom: "Moneycontrol", lien_rss: "http://www.moneycontrol.com/rss/latestnews.xml" },
-  { nom: "Economic Times", lien_rss: "https://economictimes.indiatimes.com/rssfeedsdefault.cms" },
+  { nom: "Moneycontrol", lien_rss: "http://www.moneycontrol.com/rss/latestnews.xml", categorie: "economie" },
+  { nom: "Economic Times", lien_rss: "https://economictimes.indiatimes.com/rssfeedsdefault.cms", categorie: "economie" },
   { nom: "Oneindia", lien_rss: "https://www.oneindia.com/rss/news-fb.xml" },
   { nom: "Scroll.in", lien_rss: "http://feeds.feedburner.com/ScrollinArticles.rss" },
-  { nom: "The Financial Express", lien_rss: "https://www.financialexpress.com/feed/" },
-  { nom: "Business Line", lien_rss: "https://www.thehindubusinessline.com/feeder/default.rss" },
-  { nom: "TechGenyz", lien_rss: "http://feeds.feedburner.com/techgenyz" },
+  { nom: "The Financial Express", lien_rss: "https://www.financialexpress.com/feed/", categorie: "economie" },
+  { nom: "Business Line", lien_rss: "https://www.thehindubusinessline.com/feeder/default.rss", categorie: "economie" },
+  { nom: "TechGenyz", lien_rss: "http://feeds.feedburner.com/techgenyz", categorie: "technologie" },
   { nom: "Gujarat Samachar", lien_rss: "https://www.gujaratsamachar.com/rss/top-stories" },
   { nom: "Maharashtra Times", lien_rss: "https://maharashtratimes.com/rssfeedsdefault.cms" },
   { nom: "Loksatta", lien_rss: "https://www.loksatta.com/desh-videsh/feed/" },
@@ -125,7 +249,7 @@ const IRAN = [
   { nom: "ISNA", lien_rss: "https://www.isna.ir/rss" },
   { nom: "Mehr News", lien_rss: "https://www.mehrnews.com/rss" },
   { nom: "Khabaronline", lien_rss: "https://www.khabaronline.ir/rss" },
-  { nom: "Tasnim News", lien_rss: "https://www.tasnimnews.com/fa/rss/feed/0/8/0/%D9%85%D9%87%D9%85%D8%AA%D8%B1%DB%8C%D9%86-%D8%A7%D8%AE%D8%A8%D8%A7%D8%B1-%D8%AA%D8%B3%D9%86%DB%8C%D9%85" },
+  { nom: "Tasnim News", lien_rss: "https://www.tasnimnews.com/fa/rss/feed/0/8/0/%D9%85%D9%87%D9%85%D8%AA%D8%B1%DB%8C%D9%8BD-%D8%A7%D8%AE%D8%A8%D8%A7%D8%B1-%D8%AA%D8%B3%D9%86%DB%8C%D9%85" },
   { nom: "Asr Iran", lien_rss: "https://www.asriran.com/fa/rss/allnews" },
 ];
 
@@ -134,7 +258,7 @@ const JAPAN = [
   { nom: "Japan Today", lien_rss: "https://japantoday.com/feed" },
   { nom: "News On Japan", lien_rss: "http://www.newsonjapan.com/rss/top.xml" },
   { nom: "Kyodo News+", lien_rss: "https://english.kyodonews.net/rss/all.xml" },
-  { nom: "BRIDGE", lien_rss: "http://feeds.feedburner.com/SdJapan" },
+  { nom: "BRIDGE", lien_rss: "http://feeds.feedburner.com/SdJapan", categorie: "technologie" },
   { nom: "NYT Japan", lien_rss: "https://www.nytimes.com/svc/collections/v1/publish/http://www.nytimes.com/topic/destination/japan/rss.xml" },
   { nom: "ライブドアニュース", lien_rss: "https://news.livedoor.com/topics/rss/top.xml" },
   { nom: "朝日新聞デジタル", lien_rss: "http://rss.asahi.com/rss/asahi/newsheadlines.rdf" },
@@ -150,7 +274,7 @@ const PHILIPPINES = [
   { nom: "INQUIRER.net", lien_rss: "https://www.inquirer.net/fullfeed" },
   { nom: "Interaksyon", lien_rss: "https://www.interaksyon.com/feed/" },
   { nom: "philstar.com", lien_rss: "https://www.philstar.com/rss/headlines" },
-  { nom: "BusinessWorld", lien_rss: "https://www.bworldonline.com/feed/" },
+  { nom: "BusinessWorld", lien_rss: "https://www.bworldonline.com/feed/", categorie: "economie" },
   { nom: "SunStar", lien_rss: "https://www.sunstar.com.ph/rssFeed/selected" },
   { nom: "PhilNews.XYZ", lien_rss: "https://www.philnews.xyz/feeds/posts/default?alt=rss" },
   { nom: "Manila Standard", lien_rss: "https://manilastandard.net/feed/all" },
@@ -158,12 +282,12 @@ const PHILIPPINES = [
   { nom: "Current PH", lien_rss: "https://currentph.com/feed/" },
   { nom: "Top Gear Philippines", lien_rss: "https://www.topgear.com.ph/feed/rss1" },
   { nom: "Eagle News", lien_rss: "https://www.eaglenews.ph/feed/" },
-  { nom: "UNBOX PH", lien_rss: "https://www.unbox.ph/feed/" },
+  { nom: "UNBOX PH", lien_rss: "https://www.unbox.ph/feed/", categorie: "technologie" },
   { nom: "Tempo", lien_rss: "http://tempo.com.ph/feed/" },
   { nom: "Abante Tonite", lien_rss: "https://tonite.abante.com.ph/feed/" },
-  { nom: "BusinessMirror", lien_rss: "https://businessmirror.com.ph/feed/" },
+  { nom: "BusinessMirror", lien_rss: "https://businessmirror.com.ph/feed/", categorie: "economie" },
   { nom: "Philippine News Agency", lien_rss: "https://www.pna.gov.ph/latest.rss" },
-  { nom: "TechPinas", lien_rss: "http://feeds.feedburner.com/Techpinas" },
+  { nom: "TechPinas", lien_rss: "http://feeds.feedburner.com/Techpinas", categorie: "technologie" },
   { nom: "Bicol Standard", lien_rss: "http://www.bicolstandard.com/feeds/posts/default?alt=rss" },
 ];
 
@@ -190,7 +314,7 @@ const SPAIN = [
   { nom: "EL PAÍS", lien_rss: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada" },
   { nom: "El Confidencial España", lien_rss: "https://rss.elconfidencial.com/espana/" },
   { nom: "ElDiario.es", lien_rss: "https://www.eldiario.es/rss/" },
-  { nom: "Expansión", lien_rss: "https://e00-expansion.uecdn.es/rss/portada.xml" },
+  { nom: "Expansión", lien_rss: "https://e00-expansion.uecdn.es/rss/portada.xml", categorie: "economie" },
   { nom: "El Periódico", lien_rss: "https://www.elperiodico.com/es/rss/rss_portada.xml" },
   { nom: "HuffPost España", lien_rss: "https://www.huffingtonpost.es/feeds/index.xml" },
   { nom: "Euro Weekly News Spain", lien_rss: "https://www.euroweeklynews.com/feed/" },
@@ -206,7 +330,7 @@ const FRANCE = [
   { nom: "Franceinfo", lien_rss: "https://www.francetvinfo.fr/titres.rss" },
   { nom: "Le Huffington Post FR", lien_rss: "https://www.huffingtonpost.fr/feeds/index.xml" },
   { nom: "La Dépêche du Midi", lien_rss: "https://www.ladepeche.fr/rss.xml" },
-  { nom: "Diplomatie.gouv.fr", lien_rss: "https://www.diplomatie.gouv.fr/spip.php?page=backend-fd&lang=en" },
+  { nom: "Diplomatie.gouv.fr", lien_rss: "https://www.diplomatie.gouv.fr/spip.php?page=backend-fd&lang=en", categorie: "politique" },
   { nom: "L'essentiel (Sud Ouest)", lien_rss: "https://www.sudouest.fr/essentiel/rss.xml" },
   { nom: "Ouest-France", lien_rss: "https://www.ouest-france.fr/rss-en-continu.xml" },
 ];
@@ -222,7 +346,7 @@ const UK = [
 const IRELAND = [
   { nom: "TheJournal.ie", lien_rss: "https://www.thejournal.ie/feed/" },
   { nom: "BreakingNews.ie", lien_rss: "https://feeds.breakingnews.ie/bntopstories" },
-  { nom: "The42", lien_rss: "https://www.the42.ie/feed/" },
+  { nom: "The42", lien_rss: "https://www.the42.ie/feed/", categorie: "sport" },
   { nom: "IrishExaminer.com", lien_rss: "https://feeds.feedburner.com/ietopstories" },
   { nom: "IrishCentral.com", lien_rss: "https://feeds.feedburner.com/IrishCentral" },
   { nom: "Irish Mirror", lien_rss: "https://www.irishmirror.ie/?service=rss" },
@@ -236,7 +360,7 @@ const ITALY = [
   { nom: "Libero Quotidiano", lien_rss: "https://www.liberoquotidiano.it/rss.xml" },
   { nom: "Il Mattino", lien_rss: "https://www.ilmattino.it/?sez=XML&args&p=search&args[box]=Home&limit=20&layout=rss" },
   { nom: "Adnkronos", lien_rss: "http://rss.adnkronos.com/RSS_PrimaPagina.xml" },
-  { nom: "Milan News", lien_rss: "https://www.milannews.it/rss/" },
+  { nom: "Milan News", lien_rss: "https://www.milannews.it/rss/", categorie: "sport" },
   { nom: "Internazionale", lien_rss: "https://www.internazionale.it/sitemaps/rss.xml" },
   { nom: "Panorama", lien_rss: "https://www.panorama.it/feeds/feed.rss" },
   { nom: "The Guardian Italy", lien_rss: "https://www.theguardian.com/world/italy/rss" },
@@ -245,11 +369,11 @@ const ITALY = [
 ];
 
 const POLAND = [
-  { nom: "wPolityce", lien_rss: "http://feeds.feedburner.com/wPolitycepl" },
+  { nom: "wPolityce", lien_rss: "http://feeds.feedburner.com/wPolitycepl", categorie: "politique" },
   { nom: "Newsweek Polska", lien_rss: "https://www.newsweek.pl/rss.xml" },
   { nom: "Dziennik.pl", lien_rss: "http://rss.dziennik.pl/Dziennik-PL/" },
-  { nom: "Wirtualnemedia.pl", lien_rss: "https://www.wirtualnemedia.pl/rss/wirtualnemedia_rss.xml" },
-  { nom: "GazetaPrawna.pl", lien_rss: "http://rss.gazetaprawna.pl/GazetaPrawna" },
+  { nom: "Wirtualnemedia.pl", lien_rss: "https://www.wirtualnemedia.pl/rss/wirtualnemedia_rss.xml", categorie: "technologie" },
+  { nom: "GazetaPrawna.pl", lien_rss: "http://rss.gazetaprawna.pl/GazetaPrawna", categorie: "economie" },
   { nom: "Rzeczpospolita", lien_rss: "https://www.rp.pl/rss/1019" },
   { nom: "PAP", lien_rss: "https://www.pap.pl/rss.xml" },
   { nom: "RMF24.pl", lien_rss: "https://www.rmf24.pl/feed" },
@@ -267,7 +391,7 @@ const RUSSIA = [
   { nom: "Russia Insider", lien_rss: "https://russia-insider.com/en/all-content/rss" },
   { nom: "TASS", lien_rss: "http://tass.com/rss/v2.xml" },
   { nom: "The Moscow Times", lien_rss: "https://www.themoscowtimes.com/rss/news" },
-  { nom: "Kommersant", lien_rss: "https://www.kommersant.ru/RSS/main.xml" },
+  { nom: "Kommersant", lien_rss: "https://www.kommersant.ru/RSS/main.xml", categorie: "economie" },
   { nom: "PravdaReport", lien_rss: "https://www.pravdareport.com/export.xml" },
 ];
 
@@ -300,7 +424,7 @@ const CANADA = [
   { nom: "CBC Top Stories", lien_rss: "https://www.cbc.ca/cmlink/rss-topstories" },
   { nom: "CTVNews.ca", lien_rss: "https://www.ctvnews.ca/rss/ctvnews-ca-top-stories-public-rss-1.822009" },
   { nom: "Global News", lien_rss: "https://globalnews.ca/feed/" },
-  { nom: "Financial Post", lien_rss: "https://business.financialpost.com/feed/" },
+  { nom: "Financial Post", lien_rss: "https://business.financialpost.com/feed/", categorie: "economie" },
   { nom: "National Post", lien_rss: "https://nationalpost.com/feed/" },
   { nom: "Ottawa Citizen", lien_rss: "https://ottawacitizen.com/feed/" },
   { nom: "The Province", lien_rss: "https://theprovince.com/feed/" },
@@ -315,7 +439,7 @@ const MEXICO = [
   { nom: "Reforma", lien_rss: "https://www.reforma.com/rss/portada.xml" },
   { nom: "Vanguardia MX", lien_rss: "https://vanguardia.com.mx/rss.xml" },
   { nom: "El Siglo de Torreón", lien_rss: "https://www.elsiglodetorreon.com.mx/index.xml" },
-  { nom: "El Financiero", lien_rss: "https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/?outputType=xml" },
+  { nom: "El Financiero", lien_rss: "https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/?outputType=xml", categorie: "economie" },
   { nom: "ElNorte", lien_rss: "https://www.elnorte.com/rss/portada.xml" },
   { nom: "El Informador", lien_rss: "https://www.informador.mx/rss/ultimas-noticias.xml" },
   { nom: "24 Horas MX", lien_rss: "https://www.24-horas.mx/feed/" },
@@ -335,17 +459,16 @@ const UNITED_STATES = [
   { nom: "LA Times World & Nation", lien_rss: "https://www.latimes.com/world-nation/rss2.0.xml" },
   { nom: "CNN International", lien_rss: "http://rss.cnn.com/rss/edition.rss" },
   { nom: "Yahoo News", lien_rss: "https://news.yahoo.com/rss/mostviewed" },
-  { nom: "CNBC US Top News", lien_rss: "https://www.cnbc.com/id/100003114/device/rss/rss.html" },
-  { nom: "Politico Playbook", lien_rss: "https://rss.politico.com/playbook.xml" },
+  { nom: "CNBC US Top News", lien_rss: "https://www.cnbc.com/id/100003114/device/rss/rss.html", categorie: "economie" },
+  { nom: "Politico Playbook", lien_rss: "https://rss.politico.com/playbook.xml", categorie: "politique" },
 ];
 
 const CAMEROUN = [
-  { nom: "Cameroon Tribune", lien_rss: "https://www.cameroon-tribune.cm/rss", categorie: "politique" },
   { nom: "Journal du Cameroun", lien_rss: "https://www.journalducameroun.com/feed/" },
   { nom: "Actu Cameroun", lien_rss: "https://actucameroun.com/feed/" },
   { nom: "Cameroon Info Net", lien_rss: "https://www.cameroon-info.net/rss.xml" },
   { nom: "Cameroon Intelligence Report", lien_rss: "https://www.cameroonintelligencereport.com/feed/" },
-  { nom: "EcoMatin", lien_rss: "https://ecomatin.net/feed/", categorie: "economie" },
+  { nom: "EcoMatin", lien_rss: "https://ecomatin.net/feed.xml", categorie: "economie" },
   { nom: "Financial Afrik", lien_rss: "https://www.financialafrik.com/feed/", categorie: "economie" },
   { nom: "Digital Business Africa", lien_rss: "https://www.digitalbusiness.africa/feed/", categorie: "technologie" },
   { nom: "Investir au Cameroun", lien_rss: "https://www.investiraucameroun.com/component/obrss/fullrss", categorie: "economie" },
@@ -472,161 +595,40 @@ const INTERNATIONAL = [
   { nom: "Le Monde Diplomatique", lien_rss: "https://www.monde-diplomatique.fr/rss" },
 ];
 
-const ANDROID = [
-  { nom: "All About Android (Audio)", lien_rss: "https://feeds.twit.tv/aaa.xml" },
-  { nom: "Android (Google Blog)", lien_rss: "https://blog.google/products/android/rss" },
-  { nom: "r/android", lien_rss: "https://www.reddit.com/r/android/.rss" },
-  { nom: "Android Authority", lien_rss: "https://www.androidauthority.com/feed" },
-  { nom: "Android Authority (YouTube)", lien_rss: "https://www.youtube.com/feeds/videos.xml?user=AndroidAuthority" },
-  { nom: "Android Authority Podcast", lien_rss: "https://androidauthority.libsyn.com/rss" },
-  { nom: "Android Central", lien_rss: "http://feeds.androidcentral.com/androidcentral" },
-  { nom: "Android Central Podcast", lien_rss: "http://feeds.feedburner.com/AndroidCentralPodcast" },
-  { nom: "Android Community", lien_rss: "https://androidcommunity.com/feed/" },
-  { nom: "Android Police", lien_rss: "http://feeds.feedburner.com/AndroidPolice" },
-  { nom: "AndroidGuys", lien_rss: "https://www.androidguys.com/feed" },
-  { nom: "Cult of Android", lien_rss: "https://www.cultofandroid.com/feed" },
-  { nom: "Cyanogen Mods", lien_rss: "https://www.cyanogenmods.org/feed" },
-  { nom: "Droid Life", lien_rss: "https://www.droid-life.com/feed" },
-  { nom: "GSMArena", lien_rss: "https://www.gsmarena.com/rss-news-reviews.php3" },
-  { nom: "Phandroid", lien_rss: "http://feeds2.feedburner.com/AndroidPhoneFans" },
-  { nom: "TalkAndroid", lien_rss: "http://feeds.feedburner.com/AndroidNewsGoogleAndroidForums" },
-  { nom: "xda-developers", lien_rss: "https://data.xda-developers.com/portal-feed" },
-];
-
-const ANDROID_DEV = [
-  { nom: "Android - Buffer Resources", lien_rss: "https://buffer.com/resources/android/rss/" },
-  { nom: "Android Developers (YouTube)", lien_rss: "https://www.youtube.com/feeds/videos.xml?user=androiddevelopers" },
-  { nom: "Android Developers - Medium", lien_rss: "https://medium.com/feed/androiddevelopers" },
-  { nom: "Android Developers Backstage", lien_rss: "http://feeds.feedburner.com/blogspot/androiddevelopersbackstage" },
-  { nom: "Android Developers Blog", lien_rss: "http://feeds.feedburner.com/blogspot/hsDu" },
-  { nom: "Android Weekly Archive", lien_rss: "https://us2.campaign-archive.com/feed?u=887caf4f48db76fd91e20a06d&id=4eb677ad19" },
-  { nom: "Instagram Engineering (Android)", lien_rss: "https://instagram-engineering.com/feed/tagged/android" },
-  { nom: "MindOrks (Android)", lien_rss: "https://medium.com/feed/mindorks/tagged/android" },
-  { nom: "Airbnb Tech (Android)", lien_rss: "https://medium.com/feed/airbnb-engineering/tagged/android" },
-  { nom: "Dan Lew Codes", lien_rss: "https://blog.danlew.net/rss/" },
-  { nom: "r/androiddev", lien_rss: "https://reddit.com/r/androiddev.rss" },
-  { nom: "Fragmented Podcast", lien_rss: "https://feeds.simplecast.com/LpAGSLnY" },
-  { nom: "Handstand Sam", lien_rss: "https://handstandsam.com/feed/" },
-  { nom: "Jake Wharton", lien_rss: "https://jakewharton.com/atom.xml" },
-  { nom: "JetBrains Blog", lien_rss: "https://blog.jetbrains.com/blog/feed" },
-  { nom: "Joe Birch", lien_rss: "https://joebirch.co/feed" },
-  { nom: "Kotlin (YouTube)", lien_rss: "https://www.youtube.com/feeds/videos.xml?playlist_id=PLQ176FUIyIUa6SChjajjVc-LMzxWiz6dy" },
-  { nom: "Kt. Academy - Medium", lien_rss: "https://blog.kotlin-academy.com/feed" },
-  { nom: "OkKotlin", lien_rss: "https://okkotlin.com/rss.xml" },
-  { nom: "ProAndroidDev", lien_rss: "https://proandroiddev.com/feed" },
-  { nom: "Public Object", lien_rss: "https://publicobject.com/rss/" },
-  { nom: "Saket Narayan", lien_rss: "https://saket.me/feed/" },
-  { nom: "Styling Android", lien_rss: "http://feeds.feedburner.com/StylingAndroid" },
-  { nom: "Talking Kotlin", lien_rss: "https://feeds.soundcloud.com/users/soundcloud:users:280353173/sounds.rss" },
-  { nom: "The Android Arsenal", lien_rss: "https://feeds.feedburner.com/Android_Arsenal" },
-  { nom: "Zac Sweers", lien_rss: "https://www.zacsweers.dev/rss/" },
-  { nom: "Zarah Dominguez", lien_rss: "https://zarah.dev/feed.xml" },
-  { nom: "chRyNaN Codes", lien_rss: "https://chrynan.codes/rss/" },
-  { nom: "droidcon NYC", lien_rss: "https://www.youtube.com/feeds/videos.xml?channel_id=UCSLXy31j2Z0sdDeeAX5JpPw" },
-  { nom: "droidcon SF", lien_rss: "https://www.youtube.com/feeds/videos.xml?channel_id=UCKubKoe1CBw_-n_GXetEQbg" },
-  { nom: "goobar", lien_rss: "https://goobar.io/feed" },
-  { nom: "zsmb.co", lien_rss: "https://zsmb.co/index.xml" },
-];
-
-const APPLE = [
-  { nom: "9to5Mac", lien_rss: "https://9to5mac.com/feed" },
-  { nom: "Apple (YouTube)", lien_rss: "https://www.youtube.com/feeds/videos.xml?user=Apple" },
-  { nom: "Apple Newsroom", lien_rss: "https://www.apple.com/newsroom/rss-feed.rss" },
-  { nom: "AppleInsider News", lien_rss: "https://appleinsider.com/rss/news/" },
-  { nom: "Cult of Mac", lien_rss: "https://www.cultofmac.com/feed" },
-  { nom: "Daring Fireball", lien_rss: "https://daringfireball.net/feeds/main" },
-  { nom: "MacRumors (YouTube)", lien_rss: "https://www.youtube.com/feeds/videos.xml?user=macrumors" },
-  { nom: "MacRumors", lien_rss: "http://feeds.macrumors.com/MacRumors-Mac" },
-  { nom: "MacStories", lien_rss: "https://www.macstories.net/feed" },
-  { nom: "Macworld.com", lien_rss: "https://www.macworld.com/index.rss" },
-  { nom: "Marco.org", lien_rss: "https://marco.org/rss" },
-  { nom: "OS X Daily", lien_rss: "http://feeds.feedburner.com/osxdaily" },
-  { nom: "The Loop", lien_rss: "https://www.loopinsight.com/feed" },
-  { nom: "r/apple", lien_rss: "https://www.reddit.com/r/apple/.rss" },
-  { nom: "r/iPhone", lien_rss: "https://www.reddit.com/r/iphone/.rss" },
-];
-
-const ARCHITECTURE = [
-  { nom: "A Daily Dose of Architecture Books", lien_rss: "http://feeds.feedburner.com/archidose" },
-  { nom: "ArchDaily", lien_rss: "http://feeds.feedburner.com/Archdaily" },
-  { nom: "Archinect News", lien_rss: "https://archinect.com/feed/1/news" },
-];
-
 // ============================================================================
 // CONSOLIDATION ET COMPILATION GLOBALE DES FLUX
 // ============================================================================
 const CURATED_FEEDS: CuratedFeed[] = [
-  // Océanie
-  ...withZoneAndCategorie(Zone.oceanie, "generale", AUSTRALIA, {
-    "Business News Australia": "economie",
-  }),
+  ...withZoneAndCategorie(Zone.international, "generale", FRANCE_24),
+  ...withZoneAndCategorie(Zone.international, "generale", RFI),
+  ...withZoneAndCategorie(Zone.international, "generale", EURONEWS),
+  ...withZoneAndCategorie(Zone.international, "generale", BBC),
+  ...withZoneAndCategorie(Zone.international, "generale", CNN),
 
-  // Asie
+  // Zones Géographiques
+  ...withZoneAndCategorie(Zone.asie, "generale", AUSTRALIA),
   ...withZoneAndCategorie(Zone.asie, "generale", BANGLADESH),
-  ...withZoneAndCategorie(Zone.asie, "generale", HONG_KONG, {
-    "香港經濟日報 hket.com": "economie",
-  }),
+  ...withZoneAndCategorie(Zone.asie, "generale", HONG_KONG),
   ...withZoneAndCategorie(Zone.asie, "generale", INDONESIA),
-  ...withZoneAndCategorie(Zone.asie, "generale", INDIA, {
-    "Business Standard": "economie",
-    "Moneycontrol": "economie",
-    "Economic Times": "economie",
-    "The Financial Express": "economie",
-    "Business Line": "economie",
-    "TechGenyz": "technologie",
-  }),
+  ...withZoneAndCategorie(Zone.asie, "generale", INDIA),
   ...withZoneAndCategorie(Zone.asie, "generale", IRAN),
-  ...withZoneAndCategorie(Zone.asie, "generale", JAPAN, {
-    "BRIDGE": "technologie",
-  }),
+  ...withZoneAndCategorie(Zone.asie, "generale", JAPAN),
   ...withZoneAndCategorie(Zone.asie, "generale", MYANMAR),
-  ...withZoneAndCategorie(Zone.asie, "generale", PHILIPPINES, {
-    "BusinessWorld": "economie",
-    "BusinessMirror": "economie",
-    "TechPinas": "technologie",
-    "UNBOX PH": "technologie",
-    "Top Gear Philippines": "technologie",
-  }),
+  ...withZoneAndCategorie(Zone.asie, "generale", PHILIPPINES),
   ...withZoneAndCategorie(Zone.asie, "generale", PAKISTAN),
-
-  // Europe
   ...withZoneAndCategorie(Zone.europe, "generale", GERMANY),
-  ...withZoneAndCategorie(Zone.europe, "generale", SPAIN, {
-    "Expansión": "economie",
-  }),
-  ...withZoneAndCategorie(Zone.europe, "generale", FRANCE, {
-    "Diplomatie.gouv.fr": "politique",
-  }),
+  ...withZoneAndCategorie(Zone.europe, "generale", SPAIN),
+  ...withZoneAndCategorie(Zone.europe, "generale", FRANCE),
   ...withZoneAndCategorie(Zone.europe, "generale", UK),
-  ...withZoneAndCategorie(Zone.europe, "generale", IRELAND, {
-    "The42": "sport",
-  }),
-  ...withZoneAndCategorie(Zone.europe, "generale", ITALY, {
-    "Milan News": "sport",
-  }),
-  ...withZoneAndCategorie(Zone.europe, "generale", POLAND, {
-    "GazetaPrawna.pl": "economie",
-    "wPolityce": "politique",
-  }),
-  ...withZoneAndCategorie(Zone.europe, "generale", RUSSIA, {
-    "Kommersant": "economie",
-  }),
+  ...withZoneAndCategorie(Zone.europe, "generale", IRELAND),
+  ...withZoneAndCategorie(Zone.europe, "generale", ITALY),
+  ...withZoneAndCategorie(Zone.europe, "generale", POLAND),
+  ...withZoneAndCategorie(Zone.europe, "generale", RUSSIA),
   ...withZoneAndCategorie(Zone.europe, "generale", UKRAINE),
-
-  // Amériques
   ...withZoneAndCategorie(Zone.amerique, "generale", BRAZIL),
-  ...withZoneAndCategorie(Zone.amerique, "generale", CANADA, {
-    "Financial Post": "economie",
-  }),
-  ...withZoneAndCategorie(Zone.amerique, "generale", MEXICO, {
-    "El Financiero": "economie",
-  }),
-  ...withZoneAndCategorie(Zone.amerique, "generale", UNITED_STATES, {
-    "CNBC US Top News": "economie",
-    "Politico Playbook": "politique",
-  }),
-
-  // Afrique (classé par pays)
+  ...withZoneAndCategorie(Zone.amerique, "generale", CANADA),
+  ...withZoneAndCategorie(Zone.amerique, "generale", MEXICO),
+  ...withZoneAndCategorie(Zone.amerique, "generale", UNITED_STATES),
   ...withZoneAndCategorie(Zone.afrique, "generale", CAMEROUN),
   ...withZoneAndCategorie(Zone.afrique, "generale", NIGERIA),
   ...withZoneAndCategorie(Zone.afrique, "generale", SOUTH_AFRICA),
@@ -642,15 +644,7 @@ const CURATED_FEEDS: CuratedFeed[] = [
   ...withZoneAndCategorie(Zone.afrique, "generale", RWANDA),
   ...withZoneAndCategorie(Zone.afrique, "generale", AFRIQUE_GENERALISTE),
   ...withZoneAndCategorie(Zone.afrique, "economie", AGENCE_ECOFIN),
-
-  // International
-  ...withZoneAndCategorie(Zone.international, "international", INTERNATIONAL),
-
-  // Thématiques (pas de zone géographique)
-  ...withZoneAndCategorie(undefined, "technologie", ANDROID),
-  ...withZoneAndCategorie(undefined, "technologie", ANDROID_DEV),
-  ...withZoneAndCategorie(undefined, "technologie", APPLE),
-  ...withZoneAndCategorie(undefined, "culture", ARCHITECTURE),
+  ...withZoneAndCategorie(Zone.international, "generale", INTERNATIONAL),
 ];
 
 async function main() {
