@@ -21,3 +21,11 @@ export const registerLimiter = rateLimit({
     legacyHeaders: false,
     handler: rateLimitHandler,
 });
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+});

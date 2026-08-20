@@ -42,4 +42,18 @@ export default class ArticleInteractionRepository {
         ]);
         return { interactions, total };
     }
+    async getAnnotes(user_id: string, params: { skip: number; take: number }) {
+        const where = { user_id, note: { not: null } };
+        const [interactions, total] = await Promise.all([
+            this.db.articleInteraction.findMany({
+            where,
+            include: { article: { include: { flux: { select: { nom: true, id_flux: true } } } } },
+            orderBy: { updatedAt: "desc" },
+            skip: params.skip,
+            take: params.take,
+            }),
+            this.db.articleInteraction.count({ where }),
+        ]);
+        return { interactions, total };
+    }
 }

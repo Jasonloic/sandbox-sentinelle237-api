@@ -1,7 +1,8 @@
 import { Router } from "express";
 import AuthController from "../controllers/AuthController";
 import ValidateRequest from "../middlewares/ValidateRequest";
-import { loginLimiter, registerLimiter } from "../middlewares/RateLimiter";
+import { loginLimiter, registerLimiter, forgotPasswordLimiter } from "../middlewares/RateLimiter";
+import { forgotPasswordSchema, resetPasswordSchema } from "../validations/UserValidations";
 import {
     loginUserSchema,
     registerUserSchema,
@@ -38,6 +39,17 @@ router
         authController.verifyTotpLogin.bind(authController)
     )
     .post("/refresh", authController.refresh.bind(authController))
+    .post(
+        "/forgot-password",
+        forgotPasswordLimiter,
+        ValidateRequest(forgotPasswordSchema),
+        authController.forgotPassword.bind(authController)
+    )
+    .post(
+        "/reset-password",
+        ValidateRequest(resetPasswordSchema),
+        authController.resetPassword.bind(authController)
+    )
     .post("/logout", authController.logout.bind(authController));
 
 export { router as AuthRoutes };

@@ -188,4 +188,58 @@ export class MailService {
     html,
   });
 }
+    async sendResetPasswordEmail(to: string, pseudo: string, rawToken: string) {
+  const lien = `${APP_URL}/reset-password?token=${rawToken}`; // route FRONTEND, pas backend
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:40px 0;background-color:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" border="0" style="background-color:#6C6FF5;border-radius:20px;overflow:hidden;">
+        <tr><td style="padding: 28px 32px 20px 32px;">
+          <p style="margin:0;font-size:17px;font-weight:700;color:#FFFFFF;">✦ &nbsp;Sentinelle 237</p>
+        </td></tr>
+        <tr><td style="padding: 0 12px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFFFFF;border-radius:14px;overflow:hidden;">
+            <tr><td style="padding: 44px 40px 40px 40px;">
+              <h1 style="margin:0 0 20px 0;font-size:36px;font-weight:800;line-height:1.08;color:#0F0F0F;">
+                Réinitialise ton mot de passe.
+              </h1>
+              <hr style="border:none;border-top:1px solid #E5E7EB;margin:0 0 24px 0;">
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.65;color:#6B7280;">
+                Bonjour ${pseudo}, une demande de réinitialisation de mot de passe a été faite pour ton compte.
+                Ce lien expire dans <strong style="color:#374151;">1 heure</strong>.
+              </p>
+              <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+                <tr><td style="border-radius:100px;background:#6C6FF5;">
+                  <a href="${lien}" style="display:inline-block;padding:15px 36px;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:100px;">
+                    Choisir un nouveau mot de passe
+                  </a>
+                </td></tr>
+              </table>
+              <p style="margin:0;font-size:13.5px;line-height:1.65;color:#6B7280;">
+                Si tu n'es pas à l'origine de cette demande, ignore simplement cet email —
+                ton mot de passe actuel reste inchangé.
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding: 18px 32px 24px 32px;">
+          <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.65);">Envoyé avec ❤️ par l'équipe Sentinelle 237</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await this.transporter.sendMail({
+    from: MAIL_FROM,
+    to,
+    subject: "Sentinelle 237 - Réinitialisation de mot de passe",
+    html,
+  });
+}
 }

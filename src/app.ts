@@ -1,6 +1,7 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { connectToDB } from "./config/db";
 import { AppRoutes } from "./routes/AppRoutes";
 import ErrorHandler from "./middlewares/ErrorHandler";
@@ -13,6 +14,17 @@ import { mlInferenceService } from "./services/MLInferenceService";
 
 const app = express();
 app.set("trust proxy", 1);
+
+const { FRONTEND_ORIGINS } = process.env as { [key: string]: string };
+const allowedOrigins = (FRONTEND_ORIGINS || "").split(",").map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
