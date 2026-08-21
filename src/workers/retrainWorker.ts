@@ -7,14 +7,14 @@ import { MLFeedbackService } from "../services/MLFeedbackService";
 
 dotenv.config();
 
-const { REDIS_HOST, REDIS_PORT, ML_MODEL_DIR, ML_RELOAD_CHANNEL } = process.env as { [key: string]: string };
-const connection = { host: REDIS_HOST || "127.0.0.1", port: Number(REDIS_PORT) || 6379 };
-const publisher = new Redis(connection);
+const { REDIS_URL, ML_MODEL_DIR, ML_RELOAD_CHANNEL, ML_PYTHON_BIN } = process.env as { [key: string]: string };
+
+const publisher = new Redis(REDIS_URL);
 const mlFeedbackService = new MLFeedbackService();
 
 function runPythonTraining(dataPath: string, outputDir: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const pythonBin = path.resolve("ml/venv/bin/python3");
+        const pythonBin = ML_PYTHON_BIN || "python3";
         const scriptPath = path.resolve("ml/train_and_export.py");
         const child = spawn(pythonBin, [scriptPath, "--data", dataPath, "--output", outputDir]);
 
@@ -44,7 +44,7 @@ const worker = new Worker(
         await publisher.publish(ML_RELOAD_CHANNEL || "model:reloaded", "reload");
         console.log("[retrain-worker]: notification de rechargement envoyée");
     },
-    { connection }
+    { connection: REDIS_URL }
 );
 
 worker.on("failed", (job, err) => console.error(`[retrain-worker]: job ${job?.id} échoué:`, err.message));

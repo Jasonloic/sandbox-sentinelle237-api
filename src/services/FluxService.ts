@@ -17,7 +17,7 @@ import type {
   ListMyFluxQuery,
 } from "../validations/FluxValidations";
 
-const { NITTER_INSTANCE, FLUX_REFRESH_COOLDOWN_MINUTES } = process.env as { [key: string]: string };
+const { FLUX_REFRESH_COOLDOWN_MINUTES } = process.env as { [key: string]: string };
 
 const fluxRepository = new FluxRepository();
 const articleRepository = new ArticleRepository();
@@ -92,8 +92,7 @@ export default class FluxService {
       }
 
       case FluxType.x: {
-        const username = input.identifiant.replace(/^@/, "").replace(/\/$/, "");
-        const feedUrl = `${NITTER_INSTANCE}/${username}/rss`;
+        const feedUrl = await this.feedParserService.resolveTwitterFeedUrl(input.identifiant);
         const parsed = await this.feedParserService.parseFeed(feedUrl);
         return {
           lien_rss: feedUrl,
@@ -168,6 +167,16 @@ export default class FluxService {
       const username = flux.lien_rss.replace("telegram://", "");
       const result = await this.telegramService.fetchChannelPosts(username);
       return this.mapTelegramPosts(result.posts);
+    }
+    if (flux.type === FluxType.x) {
+      const match = flux.lien_rss.match(/\/([^/]+)\/rss$/);
+      const username = match?.[1];
+      if (!username) {
+        throw new HttpException(502, "Impossible d'extraire le nom d'utilisateur X depuis l'URL stockée");
+      }
+      const feedUrl = await this.feedParserService.resolveTwitterFeedUrl(username);
+      const parsed = await this.feedParserService.parseFeed(feedUrl);
+      return parsed.items;
     }
     const parsed = await this.feedParserService.parseFeed(flux.lien_rss);
     return parsed.items;

@@ -72,7 +72,7 @@ export class FeedParserService {
   async parseFeed(feedUrl: string): Promise<ParsedFeed> {
     try {
       const isFeed = this.looksLikeFeedUrl(feedUrl);
-      const extraHeaders = isFeed
+      const extraHeaders: Record<string, string> = isFeed
           ? { Accept: "application/rss+xml,application/atom+xml,application/xml;q=0.9,*/*;q=0.8" }
           : {};
 
@@ -166,18 +166,15 @@ export class FeedParserService {
   async resolveYoutubeFeedUrl(channelUrl: string): Promise<string> {
     const normalized = channelUrl.replace(/\/$/, "");
 
-    // 1. Channel ID direct (/channel/UC...)
     const directMatch = normalized.match(/\/channel\/(UC[\w-]+)/);
     if (directMatch) {
       return `https://www.youtube.com/feeds/videos.xml?channel_id=${directMatch[1]}`;
     }
 
-    // 2. Handle @username
     const handleMatch = normalized.match(/\/@([\w-]+)/);
     if (handleMatch) {
       const handle = handleMatch[1];
 
-      // 2a. API YouTube Data v3 (si clé configurée) — méthode fiable
       if (this.youtubeApiKey) {
         const channelId = await this.resolveHandleViaApi(handle, this.youtubeApiKey);
         if (channelId) {
@@ -185,13 +182,11 @@ export class FeedParserService {
         }
       }
 
-      // 2b. oEmbed (API légère, souvent moins bloquée que le HTML)
       const channelId = await this.resolveHandleViaOembed(handle);
       if (channelId) {
         return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
       }
 
-      // 2c. HTML scraping (dernier recours)
       const channelIdHtml = await this.resolveHandleViaHtml(handle);
       if (channelIdHtml) {
         return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdHtml}`;
@@ -205,7 +200,6 @@ export class FeedParserService {
       );
     }
 
-    // 3. Legacy /user/ ou /c/
     const legacyMatch = normalized.match(/\/(?:user|c)\/([\w-]+)/);
     if (legacyMatch) {
       return `https://www.youtube.com/feeds/videos.xml?user=${legacyMatch[1]}`;
@@ -250,9 +244,10 @@ export class FeedParserService {
 
   private async resolveHandleViaHtml(handle: string): Promise<string | null> {
     try {
-      const res = await fetchWithTimeout(`https://www.youtube.com/@${handle}`, 15000, {
+      const extraHeaders: Record<string, string> = {
         Cookie: "CONSENT=YES+cb.20210328-17-p0.en+FX+{}",
-      });
+      };
+      const res = await fetchWithTimeout(`https://www.youtube.com/@${handle}`, 15000, extraHeaders);
       if (!res.ok) return null;
       const html = await res.text();
       const m =

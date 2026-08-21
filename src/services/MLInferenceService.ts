@@ -5,7 +5,7 @@ import Redis from "ioredis";
 import { CategorieArticle } from "@prisma/client";
 import { TfidfService } from "./TfidfService";
 
-const { REDIS_HOST, REDIS_PORT, ML_MODEL_DIR, ML_RELOAD_CHANNEL } = process.env as { [key: string]: string };
+const { REDIS_URL, ML_MODEL_DIR, ML_RELOAD_CHANNEL } = process.env as { [key: string]: string };
 
 type Manifest = {
     model: string;
@@ -27,7 +27,7 @@ class MLInferenceServiceSingleton {
     }
 
     private subscribeToReloads() {
-        const subscriber = new Redis({ host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) || 6379 });
+        const subscriber = new Redis(REDIS_URL);
         const channel = ML_RELOAD_CHANNEL || "model:reloaded";
 
         subscriber.subscribe(channel, (err) => {
