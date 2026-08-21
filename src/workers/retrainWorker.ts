@@ -4,6 +4,7 @@ import path from "path";
 import Redis from "ioredis";
 import dotenv from "dotenv";
 import { MLFeedbackService } from "../services/MLFeedbackService";
+import { parseRedisUrl } from "../utils/redisConnection";
 
 dotenv.config();
 
@@ -44,7 +45,7 @@ const worker = new Worker(
         await publisher.publish(ML_RELOAD_CHANNEL || "model:reloaded", "reload");
         console.log("[retrain-worker]: notification de rechargement envoyée");
     },
-    { connection: REDIS_URL }
+    { connection: parseRedisUrl(REDIS_URL) }
 );
 
 worker.on("failed", (job, err) => console.error(`[retrain-worker]: job ${job?.id} échoué:`, err.message));
