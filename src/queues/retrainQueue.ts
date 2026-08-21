@@ -1,9 +1,8 @@
 import { Queue } from "bullmq";
 
-const { REDIS_HOST, REDIS_PORT } = process.env as { [key: string]: string };
-const connection = { host: REDIS_HOST || "127.0.0.1", port: Number(REDIS_PORT) || 6379 };
+const { REDIS_URL } = process.env as { [key: string]: string };
 
-export const retrainQueue = new Queue("retrain-classification", { connection });
+export const retrainQueue = new Queue("retrain-classification", { connection: REDIS_URL });
 
 export async function enqueueRetrain(reason: string) {
     await retrainQueue.add(
