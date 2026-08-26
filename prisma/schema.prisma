@@ -17,34 +17,35 @@ enum Offre {
 }
 
 model User {
-  id_user            String    @id @default(uuid())
-  pseudo             String    @unique
-  mail               String    @unique
-  password           String
-  role               Role      @default(veilleur)
-  pays               String
-  ville              String
-  verified           Boolean   @default(false)
-  activated          Boolean   @default(true)
-  token_verification String?
-  token_expiration   DateTime?
-  totp_secret        String?
-  totp_enabled       Boolean   @default(false)
-  token_reset_password             String?
-  token_reset_password_expiration  DateTime?
-  offre              Offre     @default(community)
+  id_user                         String    @id @default(uuid())
+  pseudo                          String    @unique
+  mail                            String    @unique
+  password                        String
+  role                            Role      @default(veilleur)
+  pays                            String
+  ville                           String
+  verified                        Boolean   @default(false)
+  activated                       Boolean   @default(true)
+  token_verification              String?
+  token_expiration                DateTime?
+  totp_secret                     String?
+  totp_enabled                    Boolean   @default(false)
+  token_reset_password            String?
+  token_reset_password_expiration DateTime?
+  offre                           Offre     @default(community)
 
-  totpRecoveryCodes TotpRecoveryCode[]
-  fluxCrees   Flux[]     @relation("FluxCreator")
-  fluxAbonnes UserFlux[]
-  alertes Alerte[]
-  dossiers Dossier[]
+  totpRecoveryCodes   TotpRecoveryCode[]
+  fluxCrees           Flux[]               @relation("FluxCreator")
+  fluxAbonnes         UserFlux[]
+  alertes             Alerte[]
+  dossiers            Dossier[]
   articleInteractions ArticleInteraction[]
-  modelesPdf     ModelePdf[]
-  revuesDePresse RevueDePresse[]
+  modelesPdf          ModelePdf[]
+  revuesDePresse      RevueDePresse[]
+  fluxEpingles        FluxEpingle[]
 
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
@@ -75,6 +76,7 @@ enum Zone {
   oceanie
   international
 }
+
 model CategorieFlux {
   id_categorie String   @id @default(uuid())
   code         String   @unique
@@ -105,9 +107,10 @@ model Flux {
   subscribers     UserFlux[]
   articles        Article[]
   dossiers        DossierFlux[]
+  epingles        FluxEpingle[]
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("flux")
 }
@@ -122,6 +125,18 @@ model UserFlux {
 
   @@unique([user_id, flux_id])
   @@map("user_flux")
+}
+
+model FluxEpingle {
+  id_epingle String   @id @default(uuid())
+  user_id    String
+  flux_id    String
+  user       User     @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  flux       Flux     @relation(fields: [flux_id], references: [id_flux], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([user_id, flux_id])
+  @@map("flux_epingles")
 }
 
 enum CategorieArticle {
@@ -145,6 +160,7 @@ model ArticleInteraction {
   article        Article  @relation(fields: [article_id], references: [id_article], onDelete: Cascade)
   note           String?
   favori         Boolean  @default(false)
+  lu             Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -153,9 +169,9 @@ model ArticleInteraction {
 }
 
 model Article {
-  id_article       String            @id @default(uuid())
+  id_article       String               @id @default(uuid())
   flux_id          String
-  flux             Flux              @relation(fields: [flux_id], references: [id_flux], onDelete: Cascade)
+  flux             Flux                 @relation(fields: [flux_id], references: [id_flux], onDelete: Cascade)
   titre            String
   lien             String
   description      String?
@@ -165,18 +181,18 @@ model Article {
   categorie        CategorieArticle?
   resume           String?
   interactions     ArticleInteraction[]
-  createdAt        DateTime          @default(now())
+  createdAt        DateTime             @default(now())
 
   @@unique([flux_id, lien])
   @@map("articles")
 }
 
 model FeedbackClassification {
-  id_feedback               String            @id @default(uuid())
-  texte                      String
-  categorie                  CategorieArticle
-  utilise_pour_entrainement  Boolean           @default(false)
-  createdAt                  DateTime          @default(now())
+  id_feedback               String           @id @default(uuid())
+  texte                     String
+  categorie                 CategorieArticle
+  utilise_pour_entrainement Boolean          @default(false)
+  createdAt                 DateTime         @default(now())
 
   @@map("feedback_classification")
 }
@@ -185,6 +201,7 @@ enum AlerteSource {
   flux
   web
 }
+
 enum AlerteFrequence {
   immediat
   quotidien
@@ -211,24 +228,23 @@ enum AlerteNombreResultats {
 }
 
 model Alerte {
-  id_alerte             String                @id @default(uuid())
+  id_alerte              String                @id @default(uuid())
   user_id                String
-  user                    User                  @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
-  mot_cle                 String
-  actif                   Boolean               @default(true)
-  frequence               AlerteFrequence       @default(immediat)
-  langue                  AlerteLangue          @default(toutes)
-  pays                    String?
-  nombre_resultats        AlerteNombreResultats @default(meilleurs)
-  envoye_a                String
-  derniere_recherche_web  DateTime?
-  dernier_envoi           DateTime?
-  resultats               AlerteResultat[]
-  dossiers                DossierAlerte[]
+  user                   User                  @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  mot_cle                String
+  actif                  Boolean               @default(true)
+  frequence              AlerteFrequence       @default(immediat)
+  langue                 AlerteLangue          @default(toutes)
+  pays                   String?
+  nombre_resultats       AlerteNombreResultats @default(meilleurs)
+  envoye_a               String
+  derniere_recherche_web DateTime?
+  dernier_envoi          DateTime?
+  resultats              AlerteResultat[]
+  dossiers               DossierAlerte[]
 
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
-
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([user_id, mot_cle])
   @@map("alertes")
@@ -336,15 +352,15 @@ model ModelePdf {
 }
 
 model RevueDePresse {
-  id_revue       String     @id @default(uuid())
+  id_revue       String    @id @default(uuid())
   user_id        String
-  user           User       @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
+  user           User      @relation(fields: [user_id], references: [id_user], onDelete: Cascade)
   modele_id      String
-  modele         ModelePdf  @relation(fields: [modele_id], references: [id_modele])
+  modele         ModelePdf @relation(fields: [modele_id], references: [id_modele])
   dossier_id     String?
   titre          String
   chemin_fichier String
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime  @default(now())
 
   @@map("revues_de_presse")
 }

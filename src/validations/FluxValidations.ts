@@ -39,3 +39,8 @@ export const listMyFluxQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 export type ListMyFluxQuery = z.infer<typeof listMyFluxQuerySchema>;
+
+export const epingleSchema = z.object({
+  epingle: z.boolean(),
+});
+export type EpingleInput = z.infer<typeof epingleSchema>;

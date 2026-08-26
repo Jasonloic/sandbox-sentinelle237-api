@@ -37,6 +37,7 @@ export default class ArticleService {
             ...article,
             note: interaction?.note ?? null,
             favori: interaction?.favori ?? false,
+            lu: interaction?.lu ?? false, // ← ajouté
         };
     }
 
@@ -81,6 +82,30 @@ export default class ArticleService {
             page: query.page,
             limit: query.limit,
             totalPages: Math.max(Math.ceil(total / query.limit), 1),
+            },
+        };
+    }
+
+    async setLu(userId: string, id_article: string, input: LuInput) {
+        await this.assertUserCanAccessArticle(userId, id_article);
+        return await this.articleInteractionRepository.upsertLu(userId, id_article, input.lu);
+    }
+
+    async getNonLus(userId: string, query: ListFavorisQuery) {
+        const fluxIds = await this.userFluxRepository.getSubscribedFluxIds(userId);
+        const skip = (query.page - 1) * query.limit;
+        const { articles, total } = await this.articleRepository.getNonLus(fluxIds, userId, {
+            skip,
+            take: query.limit,
+        });
+
+        return {
+            articles,
+            pagination: {
+                total,
+                page: query.page,
+                limit: query.limit,
+                totalPages: Math.max(Math.ceil(total / query.limit), 1),
             },
         };
     }

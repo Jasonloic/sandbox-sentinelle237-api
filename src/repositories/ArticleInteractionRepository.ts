@@ -56,4 +56,11 @@ export default class ArticleInteractionRepository {
         ]);
         return { interactions, total };
     }
+    async upsertLu(user_id: string, article_id: string, lu: boolean) {
+        return await this.db.articleInteraction.upsert({
+            where: { user_id_article_id: { user_id, article_id } },
+            create: { user_id, article_id, lu },
+            update: { lu },
+        });
+    }
 }

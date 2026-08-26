@@ -15,3 +15,8 @@ export const listFavorisQuerySchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 export type ListFavorisQuery = z.infer<typeof listFavorisQuerySchema>;
+
+export const luSchema = z.object({
+    lu: z.boolean(),
+});
+export type LuInput = z.infer<typeof luSchema>;

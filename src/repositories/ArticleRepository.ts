@@ -66,4 +66,21 @@ export default class ArticleRepository {
   async updateCategorieEtResume(id_article: string, data: { categorie: CategorieArticle | null; resume: string }) {
     return await this.db.article.update({ where: { id_article }, data });
   }
+
+  async getNonLus(flux_ids: string[], user_id: string, params: { skip: number; take: number }) {
+    const where = {
+      flux_id: { in: flux_ids },
+      interactions: { none: { user_id, lu: true } },
+    };
+    const [articles, total] = await Promise.all([
+      this.db.article.findMany({
+        where,
+        orderBy: { date_publication: "desc" },
+        skip: params.skip,
+        take: params.take,
+      }),
+      this.db.article.count({ where }),
+    ]);
+    return { articles, total };
+  }
 }
