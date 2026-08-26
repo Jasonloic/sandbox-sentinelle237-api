@@ -118,4 +118,14 @@ export default class FluxController {
       handleZodError(err, next);
     }
   }
+
+  async setEpingle(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new HttpException(401, "Unauthorized");
+      await this.fluxService.setEpingle(req.user.id_user, req.params.id as string, req.body.epingle);
+      res.sendStatus(204);
+    } catch (err) {
+      next(err);
+    }
+  }
 }

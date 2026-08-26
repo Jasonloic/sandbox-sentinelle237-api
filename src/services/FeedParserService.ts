@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import { HttpException } from "../utils/HttpExceptions";
 
 const parser = new Parser();
+const BOT_USER_AGENT = "Sentinelle237Bot/1.0 (+https://sentinelle237.iecameroun.cm; contact@iecameroun.cm)";
 
 export type ParsedFeed = {
   title?: string;
@@ -133,7 +134,7 @@ export class FeedParserService {
           await this.parseFeed(feedUrl);
           return feedUrl;
         } catch {
-          /* lien découvert mort */
+
         }
       }
     }
@@ -147,7 +148,16 @@ export class FeedParserService {
     for (const instance of this.nitterInstances) {
       const url = `${instance}/${clean}/rss`;
       try {
-        await this.parseFeed(url);
+        const res = await fetch(url, {
+          headers: { "User-Agent": BOT_USER_AGENT },
+          redirect: "follow",
+        });
+        if (!res.ok) continue;
+
+        const xml = await res.text();
+        if (xml.includes("not yet whitelisted")) continue;
+
+        const parsed = (await parser.parseString(xml)) as ParsedFeed;
         return url;
       } catch {
         continue;
@@ -156,7 +166,7 @@ export class FeedParserService {
 
     throw new HttpException(
         422,
-        "Aucune instance Nitter disponible pour ce compte Twitter/X. Réessaie plus tard."
+        "Aucune instance Nitter disponible pour ce compte Twitter/X (whitelist en attente ou instances indisponibles)."
     );
   }
 

@@ -3,6 +3,7 @@ import FluxRepository from "../repositories/FluxRepository";
 import ArticleRepository from "../repositories/ArticleRepository";
 import UserFluxRepository from "../repositories/UserFluxRepository";
 import CategorieFluxRepository from "../repositories/CategorieFluxRepository";
+import FluxEpingleRepository from "../repositories/FluxEpingleRepository";
 import { FeedParserService, type ParsedFeed } from "./FeedParserService";
 import { TelegramService } from "./TelegramService";
 import { mlInferenceService } from "./MLInferenceService";
@@ -25,6 +26,7 @@ const userFluxRepository = new UserFluxRepository();
 const categorieFluxRepository = new CategorieFluxRepository();
 const feedParserService = new FeedParserService();
 const telegramService = new TelegramService();
+const fluxEpingleRepository = new FluxEpingleRepository();
 
 type CrawlData = {
   lien_rss: string;
@@ -231,15 +233,14 @@ export default class FluxService {
       fluxWhere.categorie_id = categorieId ?? "__aucune__";
     }
 
-    const { flux, total } = await this.userFluxRepository.getUserFlux({
-      user_id: userId,
-      skip,
-      take: query.limit,
-      fluxWhere,
-    });
+    const [{ flux, total }, pinnedIds] = await Promise.all([
+      this.userFluxRepository.getUserFlux({ user_id: userId, skip, take: query.limit, fluxWhere }),
+      this.fluxEpingleRepository.getPinnedFluxIds(userId),
+    ]);
+    const pinnedSet = new Set(pinnedIds);
 
     return {
-      flux,
+      flux: flux.map((f) => ({ ...f, isEpingle: pinnedSet.has(f.id_flux) })),
       pagination: {
         total,
         page: query.page,
@@ -397,5 +398,14 @@ export default class FluxService {
         totalPages: Math.max(Math.ceil(total / query.limit), 1),
       },
     };
+  }
+
+  async setEpingle(userId: string, id_flux: string, epingle: boolean) {
+    await this.assertUserOwnsFlux(userId, id_flux); // ne peut épingler qu'un flux qu'on suit déjà
+    if (epingle) {
+      await this.fluxEpingleRepository.pin(userId, id_flux);
+    } else {
+      await this.fluxEpingleRepository.unpin(userId, id_flux);
+    }
   }
 }
