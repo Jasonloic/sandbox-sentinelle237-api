@@ -18,7 +18,7 @@ router
   .post("/:id/refresh", fluxController.refresh.bind(fluxController))
   .get("/:id/articles", fluxController.getArticles.bind(fluxController))
   .get("/:id", fluxController.getById.bind(fluxController))
-  .delete("/:id", fluxController.unsubscribe.bind(fluxController));
-  .patch("/:id/epingle", ValidateRequest(epingleSchema), fluxController.setEpingle.bind(fluxController))
+  .delete("/:id", fluxController.unsubscribe.bind(fluxController))
+  .patch("/:id/epingle", ValidateRequest(epingleSchema), fluxController.setEpingle.bind(fluxController));
 
 export { router as FluxRoutes };
