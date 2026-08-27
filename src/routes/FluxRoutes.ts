@@ -2,7 +2,7 @@ import { Router } from "express";
 import { Role } from "@prisma/client";
 import FluxController from "../controllers/FluxController";
 import ValidateRequest from "../middlewares/ValidateRequest";
-import { createFluxSchema } from "../validations/FluxValidations";
+import { createFluxSchema, epingleSchema } from "../validations/FluxValidations";
 import Auth from "../middlewares/Auth";
 
 const router = Router();

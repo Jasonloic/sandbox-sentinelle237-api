@@ -43,6 +43,7 @@ export default class FluxService {
   private readonly categorieFluxRepository: CategorieFluxRepository;
   private readonly feedParserService: FeedParserService;
   private readonly telegramService: TelegramService;
+  private readonly fluxEpingleRepository: FluxEpingleRepository;
 
   constructor() {
     this.fluxRepository = fluxRepository;
@@ -51,6 +52,7 @@ export default class FluxService {
     this.categorieFluxRepository = categorieFluxRepository;
     this.feedParserService = feedParserService;
     this.telegramService = telegramService;
+    this.fluxEpingleRepository = fluxEpingleRepository;
   }
 
   private normalizeUrl(input: string): string {
@@ -240,7 +242,7 @@ export default class FluxService {
     const pinnedSet = new Set(pinnedIds);
 
     return {
-      flux: flux.map((f) => ({ ...f, isEpingle: pinnedSet.has(f.id_flux) })),
+      flux: flux.map((f: (typeof flux)[number]) => ({ ...f, isEpingle: pinnedSet.has(f.id_flux) })),
       pagination: {
         total,
         page: query.page,

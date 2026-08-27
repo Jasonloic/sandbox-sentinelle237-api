@@ -2,7 +2,7 @@ import ArticleRepository from "../repositories/ArticleRepository";
 import ArticleInteractionRepository from "../repositories/ArticleInteractionRepository";
 import UserFluxRepository from "../repositories/UserFluxRepository";
 import { HttpException } from "../utils/HttpExceptions";
-import type { AnnotationInput, FavoriInput, ListFavorisQuery } from "../validations/ArticleValidations";
+import { type AnnotationInput, type FavoriInput, type LuInput, type ListFavorisQuery } from "../validations/ArticleValidations";
 
 const articleRepository = new ArticleRepository();
 const articleInteractionRepository = new ArticleInteractionRepository();
